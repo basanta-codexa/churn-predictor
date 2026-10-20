@@ -1,4 +1,14 @@
 {
+  "schema_version": 2,
+  "trained_at": "2026-10-20T02:43:14+00:00",
+  "git_commit": "ced3687",
+  "library_versions": {
+    "python": "3.14.1",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "scikit-learn": "1.9.1",
+    "xgboost": "3.4.1"
+  },
   "feature_order": [
     "Gender",
     "Senior_Citizen",
@@ -20,6 +30,13 @@
     "Monthly_Charges",
     "Total_Charges"
   ],
+  "data": {
+    "source": "telco_clean.csv",
+    "modeling": "telco_modeling.csv",
+    "rows_raw": 7043,
+    "rows_modeling": 7021,
+    "duplicates_removed": 22
+  },
   "num_cols": [
     "Tenure_Months",
     "Monthly_Charges",
@@ -121,26 +138,277 @@
     ]
   },
   "num_ranges": {
-    "Tenure_Months": [
-      0.0,
-      72.0,
-      29.0
+    "Tenure_Months": {
+      "min": 0.0,
+      "max": 72.0,
+      "median": 29.0
+    },
+    "Monthly_Charges": {
+      "min": 18.25,
+      "max": 118.75,
+      "median": 70.4
+    },
+    "Total_Charges": {
+      "min": 18.8,
+      "max": 8684.8,
+      "median": 1403.875
+    }
+  },
+  "model": {
+    "name": "XGBoost",
+    "params": {
+      "eval_metric": "logloss",
+      "learning_rate": 0.05,
+      "max_depth": 4,
+      "n_estimators": 300,
+      "random_state": 42,
+      "scale_pos_weight": 2.7818181818181817
+    },
+    "encoded_feature_count": 46,
+    "n_training_rows": 5616,
+    "n_test_rows": 1405,
+    "duplicates_removed": 22
+  },
+  "selection": {
+    "metric": "roc_auc",
+    "cv_folds": 5,
+    "candidates": {
+      "Logistic Regression": {
+        "cv_roc_auc_mean": 0.8591,
+        "cv_roc_auc_std": 0.0154
+      },
+      "Random Forest": {
+        "cv_roc_auc_mean": 0.8629,
+        "cv_roc_auc_std": 0.0153
+      },
+      "XGBoost": {
+        "cv_roc_auc_mean": 0.8572,
+        "cv_roc_auc_std": 0.0168
+      }
+    },
+    "selected": "XGBoost",
+    "reason": "best CV ROC-AUC 0.8629 (Random Forest); candidates within one standard error (>= 0.8476): Logistic Regression, Random Forest, XGBoost. Chose XGBoost on the declared preference order (exact/fast TreeSHAP explanations and a small artifact).",
+    "best_mean": 0.8629,
+    "best_std": 0.0153,
+    "one_se_cutoff": 0.8476,
+    "candidates_within_one_se": [
+      "Logistic Regression",
+      "Random Forest",
+      "XGBoost"
     ],
-    "Monthly_Charges": [
-      18.25,
-      118.75,
-      70.35
+    "preference_order": [
+      "XGBoost",
+      "Random Forest",
+      "Logistic Regression"
     ],
-    "Total_Charges": [
-      18.8,
-      8684.8,
-      1397.475
-    ]
+    "note": "Selected on cross-validated ROC-AUC over the training split only; the test split was scored once at the end."
+  },
+  "calibration": {
+    "method": "sigmoid",
+    "cv_log_loss": {
+      "isotonic": 0.4206,
+      "sigmoid": 0.4013
+    },
+    "train_base_rate": 0.2644,
+    "mean_raw_score_train": 0.3834,
+    "mean_calibrated_score_train": 0.2675,
+    "note": "The raw model output is a ranking score (the model is class weighted); the calibrator maps it onto a real churn probability."
+  },
+  "operating_point": {
+    "target_recall": 0.8,
+    "threshold": 0.294463,
+    "train_precision": 0.5404,
+    "train_recall": 0.802,
+    "selected_on": "out-of-fold training predictions"
   },
   "metrics": {
-    "roc_auc": 0.851,
-    "precision": 0.521,
-    "recall": 0.786,
-    "f1": 0.627
+    "test": {
+      "roc_auc": 0.8484,
+      "pr_auc": 0.6562,
+      "precision": 0.5106,
+      "recall": 0.7742,
+      "f1": 0.6154,
+      "accuracy": 0.7438,
+      "brier": 0.1355,
+      "log_loss": 0.4084
+    },
+    "confusion_matrix": {
+      "tn": 757,
+      "fp": 276,
+      "fn": 84,
+      "tp": 288
+    },
+    "cv": {
+      "roc_auc_mean": 0.8572,
+      "roc_auc_std": 0.0168
+    }
+  },
+  "calibration_curve": {
+    "predicted": [
+      0.0029,
+      0.013,
+      0.0413,
+      0.0962,
+      0.1592,
+      0.2366,
+      0.3479,
+      0.4475,
+      0.5741,
+      0.7374
+    ],
+    "actual": [
+      0.0,
+      0.0071,
+      0.0213,
+      0.1071,
+      0.1702,
+      0.3,
+      0.2929,
+      0.4184,
+      0.5857,
+      0.7447
+    ],
+    "counts": [
+      503,
+      223,
+      121,
+      146,
+      123,
+      104,
+      98,
+      57,
+      29,
+      1
+    ]
+  },
+  "score_reference": {
+    "population": "training set",
+    "n": 5616,
+    "quantiles": [
+      0.000193,
+      0.000624,
+      0.001132,
+      0.001553,
+      0.001965,
+      0.002346,
+      0.002703,
+      0.003036,
+      0.003468,
+      0.003972,
+      0.004825,
+      0.005633,
+      0.006393,
+      0.007656,
+      0.00929,
+      0.011076,
+      0.013856,
+      0.018041,
+      0.022073,
+      0.025807,
+      0.029697,
+      0.033351,
+      0.038424,
+      0.041667,
+      0.047326,
+      0.053612,
+      0.059075,
+      0.064061,
+      0.070226,
+      0.078345,
+      0.086994,
+      0.093334,
+      0.101869,
+      0.110603,
+      0.121113,
+      0.134491,
+      0.147182,
+      0.157053,
+      0.165868,
+      0.176946,
+      0.191711,
+      0.20595,
+      0.216385,
+      0.228156,
+      0.238663,
+      0.249746,
+      0.261231,
+      0.273724,
+      0.287486,
+      0.303027,
+      0.319064,
+      0.335977,
+      0.348186,
+      0.363571,
+      0.377029,
+      0.395949,
+      0.412494,
+      0.433303,
+      0.449248,
+      0.465793,
+      0.483977,
+      0.499897,
+      0.517751,
+      0.530097,
+      0.549869,
+      0.563138,
+      0.582021,
+      0.596872,
+      0.610801,
+      0.624631,
+      0.635092,
+      0.649874,
+      0.663166,
+      0.67579,
+      0.688516,
+      0.70246,
+      0.713378,
+      0.722135,
+      0.728613,
+      0.74128,
+      0.75247,
+      0.764091,
+      0.777665,
+      0.789219,
+      0.797623,
+      0.807533,
+      0.8179,
+      0.826863,
+      0.836826,
+      0.845837,
+      0.85588,
+      0.867081,
+      0.876063,
+      0.887654,
+      0.901204,
+      0.91095,
+      0.923837,
+      0.933729,
+      0.944038,
+      0.951757,
+      0.979889
+    ]
+  },
+  "risk_bands": {
+    "high": {
+      "label": "High risk",
+      "color": "red",
+      "min_percentile": 80.0,
+      "score_cut": 0.75247,
+      "description": "top 20% of the training population"
+    },
+    "medium": {
+      "label": "Medium risk",
+      "color": "orange",
+      "min_percentile": 60.0,
+      "score_cut": 0.483977,
+      "description": "next 20% of the training population"
+    },
+    "low": {
+      "label": "Low risk",
+      "color": "green",
+      "min_percentile": 0.0,
+      "score_cut": null,
+      "description": "bottom 60% of the training population"
+    }
   }
 }
