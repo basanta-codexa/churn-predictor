@@ -139,20 +139,44 @@ def percentile_of(score, quantiles):
     return float(np.clip(pct, 0.0, 100.0))
 
 
-def band_for(percentile, risk_bands):
-    """Pick the risk band for a population percentile.
+def band_for(percentile, risk_bands, probability=None, threshold=None):
+    """Pick the risk band for a customer.
 
-    Bands are defined on percentiles (not on raw scores) so that they keep
-    their meaning whatever the score distribution looks like.
+    When the calibrated ``probability`` and the operating ``threshold`` are
+    supplied, the band is anchored to that threshold so the two verdicts the
+    app shows can never disagree:
+
+    * below the threshold -> ``low`` (no outreach),
+    * at or above the threshold -> ``medium`` or ``high`` (outreach).
+
+    Within the actionable group, ``high`` is the top slice of the training
+    population (``min_percentile``) and ``medium`` is the rest. Bands are
+    defined on percentiles rather than raw scores so they keep their meaning
+    whatever the score distribution looks like.
+
+    The percentile-only fallback is kept for callers that do not have a
+    calibrated probability (e.g. exploratory notebooks).
     """
+    low = dict(risk_bands.get("low", {}), name="low")
+
+    if probability is not None and threshold is not None:
+        if probability < threshold:
+            return low
+        high = risk_bands.get("high")
+        if high is not None and percentile >= high["min_percentile"]:
+            return dict(high, name="high")
+        medium = risk_bands.get("medium")
+        if medium is not None:
+            return dict(medium, name="medium")
+        return low
+
     for name in ("high", "medium", "low"):
         band = risk_bands.get(name)
         if band is None:
             continue
         if percentile >= band["min_percentile"]:
             return dict(band, name=name)
-    low = risk_bands.get("low", {})
-    return dict(low, name="low")
+    return low
 
 
 def score_customer(pipe, calibrator, meta, row):
@@ -161,7 +185,8 @@ def score_customer(pipe, calibrator, meta, row):
     raw = float(pipe.predict_proba(X_new)[0, 1])
     probability = float(apply_calibrator(calibrator, meta["calibration"]["method"], [raw])[0])
     percentile = percentile_of(raw, meta["score_reference"]["quantiles"])
-    band = band_for(percentile, meta["risk_bands"])
+    band = band_for(percentile, meta["risk_bands"], probability,
+                    meta["operating_point"]["threshold"])
     return {
         "X_new": X_new,
         "raw_score": raw,

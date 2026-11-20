@@ -13,8 +13,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from predictor import (ADDON_COLS, INPUT_FEATURES, apply_calibrator, build_row,
-                       driver_path, explain, feature_labels,
+from predictor import (ADDON_COLS, INPUT_FEATURES, apply_calibrator, band_for,
+                       build_row, driver_path, explain, feature_labels,
                        feature_name_and_value, percentile_of, score_customer,
                        to_frame)
 
@@ -167,6 +167,31 @@ def test_risk_bands_are_ordered(meta):
     bands = meta["risk_bands"]
     assert bands["high"]["min_percentile"] > bands["medium"]["min_percentile"]
     assert bands["medium"]["min_percentile"] > bands["low"]["min_percentile"]
+
+
+def test_band_for_is_threshold_aware(meta):
+    """Below the threshold is always 'low'; at/above it is medium or high."""
+    thr = meta["operating_point"]["threshold"]
+    bands = meta["risk_bands"]
+    assert band_for(0.0, bands, thr - 0.01, thr)["name"] == "low"
+    assert band_for(0.0, bands, thr + 0.01, thr)["name"] == "medium"
+    assert band_for(99.0, bands, thr + 0.01, thr)["name"] == "high"
+
+
+def test_band_and_threshold_never_disagree(pipe, calibrator, meta, data):
+    """The two verdicts shown by the app must always be consistent."""
+    thr = meta["operating_point"]["threshold"]
+    sample = data.sample(250, random_state=0)
+    raw = pipe.predict_proba(sample[meta["feature_order"]])[:, 1]
+    probs = apply_calibrator(calibrator["estimator"], calibrator["method"], raw)
+    for score, prob in zip(raw, probs):
+        band = band_for(
+            percentile_of(score, meta["score_reference"]["quantiles"]),
+            meta["risk_bands"], float(prob), thr)
+        if float(prob) < thr:
+            assert band["name"] == "low"
+        else:
+            assert band["name"] in ("medium", "high")
 
 
 def test_operating_threshold_gives_the_target_recall(meta):
