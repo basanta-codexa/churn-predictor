@@ -1,16 +1,16 @@
 [theme]
-base = "light"
-primaryColor = "#1D4ED8"
-backgroundColor = "#F6F7F9"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#111827"
-linkColor = "#1D4ED8"
-borderColor = "#E2E5EA"
+base = "dark"
+primaryColor = "#7C8CFF"
+backgroundColor = "#0B0D12"
+secondaryBackgroundColor = "#14171F"
+textColor = "#E6E8EE"
+linkColor = "#9AA5FF"
+borderColor = "#242936"
 font = "sans serif"
 
 baseFontSize = 15
 baseFontWeight = 400
-baseRadius = "10px"
+baseRadius = "12px"
 buttonRadius = "8px"
 
 headingFontSizes = ["1.75rem", "1.25rem", "1.1rem", "1rem", "0.9rem", "0.85rem"]
@@ -22,13 +22,13 @@ metricValueFontWeight = 700
 showWidgetBorder = true
 showSidebarBorder = true
 
-chartCategoricalColors = ["#1D4ED8", "#0F766E", "#B45309", "#B91C1C", "#6D28D9", "#475569"]
+chartCategoricalColors = ["#7C8CFF", "#4ADE80", "#FBBF24", "#F87171", "#B98CFF", "#94A3B8"]
 
 [theme.sidebar]
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F6F7F9"
-textColor = "#374151"
-primaryColor = "#1D4ED8"
-borderColor = "#E2E5EA"
+backgroundColor = "#0E1016"
+secondaryBackgroundColor = "#14171F"
+textColor = "#C3C8D4"
+primaryColor = "#7C8CFF"
+borderColor = "#242936"
 baseRadius = "8px"
 showWidgetBorder = true

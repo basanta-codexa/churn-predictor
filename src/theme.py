@@ -1,34 +1,35 @@
 """Presentation layer for the churn application.
 
-The interface uses a neutral, light analytics theme: a restrained accent
-colour, clear typographic hierarchy, bordered surfaces, and no decorative
-animation. The CSS is injected once at the top of the app.
+The interface uses a restrained dark SaaS style: a near-black canvas, solid
+bordered surfaces, one accent colour, and clear typographic hierarchy. There
+are no gradients, glass effects, or decorative animation. The CSS is injected
+once at the top of the app.
 """
 from __future__ import annotations
 
 CSS = """
 <style>
 :root {
-    --bg: #F6F7F9;
-    --surface: #FFFFFF;
-    --surface-muted: #F1F3F6;
-    --border: #E2E5EA;
-    --border-strong: #CBD2DC;
-    --text: #111827;
-    --text-secondary: #374151;
-    --muted: #6B7280;
-    --accent: #1D4ED8;
-    --accent-soft: #EFF4FF;
-    --green: #047857;
-    --green-soft: #ECFDF5;
-    --amber: #B45309;
-    --amber-soft: #FFFBEB;
-    --red: #B91C1C;
-    --red-soft: #FEF2F2;
-    --slate: #475569;
-    --slate-soft: #F1F5F9;
-    --radius: 10px;
-    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+    --bg: #0B0D12;
+    --surface: #14171F;
+    --surface-muted: #1A1E28;
+    --border: #242936;
+    --border-strong: #333A4A;
+    --text: #E6E8EE;
+    --text-secondary: #C3C8D4;
+    --muted: #8B90A0;
+    --accent: #7C8CFF;
+    --accent-soft: rgba(124, 140, 255, 0.12);
+    --green: #4ADE80;
+    --green-soft: rgba(34, 197, 94, 0.12);
+    --amber: #FBBF24;
+    --amber-soft: rgba(245, 158, 11, 0.12);
+    --red: #F87171;
+    --red-soft: rgba(239, 68, 68, 0.12);
+    --slate: #94A3B8;
+    --slate-soft: rgba(148, 163, 184, 0.12);
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 html, body {
@@ -173,6 +174,7 @@ footer,
     color: var(--text);
     font-size: 1.5rem;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.02em;
     line-height: 1.15;
 }
@@ -215,6 +217,7 @@ footer,
     color: var(--text);
     font-size: 2rem;
     font-weight: 700;
+    font-variant-numeric: tabular-nums;
     letter-spacing: -0.025em;
     line-height: 1.1;
 }
@@ -238,10 +241,10 @@ footer,
     padding: 0.2rem 0.58rem;
 }
 
-.pill-green  { background: var(--green-soft); color: var(--green); border-color: #A7F3D0; }
-.pill-orange { background: var(--amber-soft); color: var(--amber); border-color: #FDE68A; }
-.pill-red    { background: var(--red-soft); color: var(--red); border-color: #FECACA; }
-.pill-slate  { background: var(--slate-soft); color: var(--slate); border-color: #E2E8F0; }
+.pill-green  { background: var(--green-soft); color: var(--green); border-color: #4ADE8033; }
+.pill-orange { background: var(--amber-soft); color: var(--amber); border-color: #FBBF2433; }
+.pill-red    { background: var(--red-soft); color: var(--red); border-color: #F8717133; }
+.pill-slate  { background: var(--slate-soft); color: var(--slate); border-color: #94A3B833; }
 
 /* ----------------------------------------------------------- risk meter */
 .meter-wrap {
@@ -252,7 +255,7 @@ footer,
     position: relative;
     height: 8px;
     border-radius: 999px;
-    background: #E9EDF2;
+    background: #232936;
 }
 
 .meter-fill {
@@ -311,7 +314,7 @@ footer,
 
 /* -------------------------------------------------------------- sidebar */
 [data-testid="stSidebar"] {
-    background: var(--surface) !important;
+    background: #0E1016 !important;
     border-right: 1px solid var(--border);
 }
 
@@ -361,10 +364,10 @@ footer,
 
 #: Background, foreground and solid accent for each risk band.
 BAND_COLOURS = {
-    "green": ("#ECFDF5", "#047857", "#047857"),
-    "orange": ("#FFFBEB", "#B45309", "#B45309"),
-    "red": ("#FEF2F2", "#B91C1C", "#B91C1C"),
-    "slate": ("#F1F5F9", "#475569", "#475569"),
+    "green": ("#4ADE8020", "#4ADE80", "#4ADE80"),
+    "orange": ("#FBBF2420", "#FBBF24", "#FBBF24"),
+    "red": ("#F8717120", "#F87171", "#F87171"),
+    "slate": ("#94A3B820", "#94A3B8", "#94A3B8"),
 }
 
 
