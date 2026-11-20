@@ -4,12 +4,15 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from charts import plot_risk_distribution  # noqa: E402
+from charts import (plot_category_churn, plot_churn_outcome,  # noqa: E402
+                    plot_probability_distribution, plot_risk_distribution,
+                    plot_tenure_churn)
 from data_loader import load_scored_frame  # noqa: E402
 from theme import footer, kpi_row, panel, section_header  # noqa: E402
 from page_shell import setup  # noqa: E402
@@ -29,6 +32,29 @@ counts = frame["risk_band"].value_counts().reindex(
 high_risk = int(counts["high"])
 churn_rate = float(frame["Churn_Value"].mean())
 avg_probability = float(frame["churn_probability"].mean())
+threshold = meta["operating_point"]["threshold"]
+
+
+def category_summary(column):
+    summary = (frame.groupby(column)["Churn_Value"]
+               .agg(["mean", "size"])
+               .reset_index())
+    summary.columns = ["category", "churn_rate", "count"]
+    return summary.sort_values("churn_rate", ascending=False)
+
+
+contract_summary = category_summary("Contract")
+payment_summary = category_summary("Payment_Method")
+
+tenure_bins = [0, 12, 24, 36, 48, 60, 72]
+tenure_labels = ["0-12", "13-24", "25-36", "37-48", "49-60", "61-72"]
+frame["_tenure_group"] = pd.cut(
+    frame["Tenure_Months"], bins=tenure_bins, labels=tenure_labels,
+    include_lowest=True)
+tenure_summary = (frame.groupby("_tenure_group", observed=True)["Churn_Value"]
+                  .agg(["mean", "size"])
+                  .reset_index())
+tenure_summary.columns = ["tenure_group", "churn_rate", "count"]
 
 setup(
     page_title="Overview",
@@ -68,15 +94,30 @@ st.caption(
     "threshold selected on the training split."
 )
 
-st.markdown(
-    panel(
-        "Customer segmentation",
-        "<p>Break down churn by contract, internet service, payment method, "
-        "tenure, and add-on services.</p>",
-        caption="Descriptive segmentation of the customer population.",
-        phase="Next step",
-    ),
-    unsafe_allow_html=True,
+st.plotly_chart(
+    plot_churn_outcome(frame["Churn_Value"].value_counts()),
+    width="stretch", theme=None, config={"displayModeBar": False})
+
+left, right = st.columns(2, gap="medium")
+with left:
+    st.plotly_chart(
+        plot_category_churn(contract_summary, "Churn by contract type"),
+        width="stretch", theme=None, config={"displayModeBar": False})
+with right:
+    st.plotly_chart(
+        plot_category_churn(payment_summary, "Churn by payment method"),
+        width="stretch", theme=None, config={"displayModeBar": False})
+
+st.plotly_chart(
+    plot_tenure_churn(tenure_summary),
+    width="stretch", theme=None, config={"displayModeBar": False})
+st.plotly_chart(
+    plot_probability_distribution(frame["churn_probability"], threshold),
+    width="stretch", theme=None, config={"displayModeBar": False})
+
+st.caption(
+    "All charts use the committed dataset and calibrated model scores. "
+    "Churn rates are observed outcomes, not model estimates."
 )
 
 st.markdown(
