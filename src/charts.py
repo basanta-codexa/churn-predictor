@@ -239,13 +239,13 @@ def plot_reliability(curve):
                    tickfont=dict(size=12, color=TEXT),
                    gridcolor=GRID, zeroline=False),
         yaxis=dict(title=dict(text="Observed churn rate",
-                              font=dict(size=12, color=TEXT)),
+                              font=dict(size=12, color=TEXT), standoff=18),
                    range=[0, 1], tickformat=".0%",
                    tickfont=dict(size=12, color=TEXT),
                    gridcolor=GRID, zeroline=False),
         legend=dict(font=dict(size=11, color=TEXT)),
-        height=380,
-        margin=dict(l=8, r=16, t=52, b=52),
+        height=400,
+        margin=dict(l=90, r=16, t=52, b=52),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E3E8EF",
@@ -367,7 +367,8 @@ def plot_global_drivers(summary):
         marker=dict(color=BLUE, line=dict(width=0)),
         hovertemplate="%{y}<br>%{x:.3f} log-odds<extra>Reduces risk</extra>",
     ))
-    layout = _base_layout(420)
+    layout = _base_layout(460)
+    layout["margin"]["l"] = 150
     layout.update(
         title=dict(text="Average SHAP impact by feature",
                    font=dict(size=14, color=TEXT), x=0, xanchor="left"),
