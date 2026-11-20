@@ -1,18 +1,11 @@
-"""Streamlit app for the customer churn predictor.
+"""Streamlit application for single-customer churn risk assessment.
+
+The app reports a calibrated churn probability, the customer's position in the
+training population, and SHAP attributions for the prediction. Form options,
+slider bounds, and reported metrics are read from ``models/metadata.json`` so
+the interface stays aligned with the trained pipeline.
 
 Run with:  streamlit run app.py
-
-The app shows three things for a single customer:
-
-* a **calibrated churn probability** (the raw model output is a ranking
-  score; ``models/calibrator.joblib`` maps it onto a real probability),
-* where that customer sits in the **population** (percentile and risk band),
-* **why** the model scored them that way (SHAP, aggregated back to the 19
-  raw features and shown in probability points).
-
-All form options, slider bounds and reported metrics come from
-``models/metadata.json``, so the app follows the data instead of hardcoding
-numbers.
 """
 from __future__ import annotations
 
@@ -39,12 +32,12 @@ MODEL_PATH = ROOT / "models" / "model.joblib"
 CALIBRATOR_PATH = ROOT / "models" / "calibrator.joblib"
 META_PATH = ROOT / "models" / "metadata.json"
 
-st.set_page_config(page_title="Churn Predictor", page_icon="📉", layout="wide")
+st.set_page_config(page_title="Customer Churn Risk", layout="wide")
 st.markdown(CSS, unsafe_allow_html=True)
 
 
 def _short(value):
-    """Trim long category values so the chart labels stay readable."""
+    """Trim long category values so chart labels stay readable."""
     return SHORT_VALUES.get(str(value), str(value))
 
 
@@ -54,54 +47,75 @@ def _short(value):
 @st.cache_resource
 def load_artifacts():
     import shap
+
     pipe = joblib.load(MODEL_PATH)
     calibrator = joblib.load(CALIBRATOR_PATH)
-    meta = json.loads(META_PATH.read_text())
+    meta = json.loads(META_PATH.read_text(encoding="utf-8"))
     explainer = shap.TreeExplainer(pipe.named_steps["model"])
     return pipe, calibrator, meta, explainer
 
 
 pipe, calibrator, meta, explainer = load_artifacts()
+
+if calibrator.get("method") != meta["calibration"]["method"]:
+    st.error(
+        "The model artifacts are inconsistent: the calibrator method does not "
+        "match the metadata. Retrain the model before using the app."
+    )
+    st.stop()
+
 opts = meta["cat_options"]
 rng = meta["num_ranges"]
-
+m = meta["metrics"]["test"]
+cm = meta["metrics"]["confusion_matrix"]
+threshold = meta["operating_point"]["threshold"]
+target_recall = meta["operating_point"]["target_recall"]
+base_rate = meta["calibration"]["train_base_rate"]
 
 # --------------------------------------------------------------------------- #
-# inputs
+# header
 # --------------------------------------------------------------------------- #
 st.markdown(
     hero(
-        badge=f"{meta['model']['name']} + SHAP &nbsp;·&nbsp; calibrated risk",
-        title="Customer Churn Predictor",
+        eyebrow="Customer analytics",
+        title="Customer Churn Risk",
         subtitle=(
-            "Predict which telecom customers are about to leave - and see "
-            "exactly which factors pushed them there."
+            "Estimate the probability that a customer will churn and review "
+            "the factors driving the score."
         ),
-        chips=[
+        meta=[
+            f"Model <b>{meta['model']['name']}</b>",
             f"<b>{meta['data']['rows_modeling']:,}</b> customers",
             f"<b>{len(meta['feature_order'])}</b> features",
-            f"<b>{meta['metrics']['test']['roc_auc']}</b> ROC-AUC",
-            f"<b>{meta['metrics']['test']['recall']:.0%}</b> recall",
-            f"<b>{meta['calibration']['method']}</b> calibrated",
+            f"Trained <b>{meta['trained_at'][:10]}</b>",
         ],
     ),
     unsafe_allow_html=True,
 )
 
-m = meta["metrics"]["test"]
-cm = meta["metrics"]["confusion_matrix"]
 st.markdown(
     kpi_row([
-        (f"{m['roc_auc']:.3f}", "ROC-AUC", f"CV {meta['metrics']['cv']['roc_auc_mean']:.3f}"),
-        (f"{m['recall']:.0%}", "Recall", "churners caught"),
-        (f"{m['precision']:.0%}", "Precision", "of those contacted"),
-        (f"{m['pr_auc']:.2f}", "PR-AUC", "vs 0.27 base rate"),
-        (f"{meta['calibration']['train_base_rate']:.0%}", "Churn rate", "of the population"),
+        (f"{m['roc_auc']:.3f}", "ROC-AUC",
+         f"CV {meta['metrics']['cv']['roc_auc_mean']:.3f}"),
+        (f"{m['recall']:.0%}", "Recall", "churners identified"),
+        (f"{m['precision']:.0%}", "Precision", "of flagged customers"),
+        (f"{m['pr_auc']:.2f}", "PR-AUC", f"base rate {base_rate:.2f}"),
+        (f"{base_rate:.0%}", "Churn rate", "training population"),
     ]),
     unsafe_allow_html=True,
 )
+st.caption(
+    "Metrics are computed once on the held-out test set. The threshold is "
+    f"selected on training data for at least {target_recall:.0%} recall."
+)
 
-st.sidebar.header("Customer details")
+# --------------------------------------------------------------------------- #
+# inputs
+# --------------------------------------------------------------------------- #
+st.sidebar.header("Customer profile")
+st.sidebar.caption(
+    "Options and numeric bounds are taken from the training data."
+)
 
 st.sidebar.subheader("Account")
 tenure_range = rng["Tenure_Months"]
@@ -112,25 +126,30 @@ tenure = st.sidebar.slider(
     "Tenure (months)", int(tenure_range["min"]), int(tenure_range["max"]),
     int(tenure_range["median"]))
 monthly = st.sidebar.slider(
-    "Monthly charges ($)", float(monthly_range["min"]), float(monthly_range["max"]),
-    float(monthly_range["median"]), step=0.5)
+    "Monthly charges ($)", float(monthly_range["min"]),
+    float(monthly_range["max"]), float(monthly_range["median"]), step=0.5)
 contract = st.sidebar.selectbox("Contract", opts["Contract"])
-paperless = st.sidebar.selectbox("Paperless billing", opts["Paperless_Billing"])
+paperless = st.sidebar.selectbox(
+    "Paperless billing", opts["Paperless_Billing"])
 payment = st.sidebar.selectbox("Payment method", opts["Payment_Method"])
 
 estimate = tenure * monthly
 use_estimate = st.sidebar.checkbox(
     "Estimate total charges", value=True,
-    help=f"Total charges are what the customer has paid over their lifetime. "
-         f"Currently estimated at ${estimate:,.0f} (tenure x monthly charges). "
-         f"Untick to enter the real value.")
+    help="Total charges are estimated as tenure multiplied by monthly charges. "
+         "Untick to enter the actual lifetime value.")
 if use_estimate:
     total = estimate
-    st.sidebar.caption(f"Total charges estimated at ${estimate:,.0f}")
+    st.sidebar.caption(f"Estimated total charges: ${estimate:,.0f}")
+    if not total_range["min"] <= estimate <= total_range["max"]:
+        st.sidebar.warning(
+            "The estimate falls outside the training range. Enter the actual "
+            "total charges for a more reliable score."
+        )
 else:
     total = st.sidebar.number_input(
-        "Total charges ($)", min_value=0.0, max_value=float(total_range["max"]),
-        value=float(estimate), step=10.0)
+        "Total charges ($)", min_value=0.0,
+        max_value=float(total_range["max"]), value=float(estimate), step=10.0)
 
 st.sidebar.subheader("Demographics")
 gender = st.sidebar.selectbox("Gender", opts["Gender"])
@@ -143,7 +162,9 @@ phone = st.sidebar.selectbox("Phone service", opts["Phone_Service"])
 if phone == "No":
     multiple_lines = "No phone service"
 else:
-    multiple_lines = st.sidebar.selectbox("Multiple lines", ["No", "Yes"])
+    line_options = [value for value in opts["Multiple_Lines"]
+                    if value != "No phone service"] or ["No", "Yes"]
+    multiple_lines = st.sidebar.selectbox("Multiple lines", line_options)
 
 internet = st.sidebar.selectbox("Internet service", opts["Internet_Service"])
 addons = {}
@@ -151,12 +172,10 @@ for col in ADDON_COLS:
     if internet == "No":
         addons[col] = "No internet service"
     else:
-        addons[col] = st.sidebar.selectbox(col.replace("_", " "), ["No", "Yes"])
-
-st.sidebar.caption(
-    "Slider bounds come from the training data, so the model is never asked "
-    "to extrapolate beyond the population it was trained on."
-)
+        addon_options = [value for value in opts[col]
+                         if value != "No internet service"] or ["No", "Yes"]
+        addons[col] = st.sidebar.selectbox(
+            col.replace("_", " "), addon_options)
 
 # --------------------------------------------------------------------------- #
 # predict
@@ -173,25 +192,21 @@ result = score_customer(pipe, calibrator["estimator"], meta, row)
 probability = result["churn_probability"]
 percentile = result["percentile"]
 band = result["band"]
-threshold = meta["operating_point"]["threshold"]
 
-# The explanation and the driver path are needed by both the summary cards
-# and the chart, so they are computed once here.
 explanation = explain(explainer, pipe, meta, result["X_new"])
 short_names, values = feature_name_and_value(explanation["names"], row)
 
 path = driver_path(
     explanation["feature_phi"], explanation["base_value"],
-    transform=lambda p: apply_calibrator(calibrator["estimator"],
-                                         calibrator["method"], p),
+    transform=lambda p: apply_calibrator(
+        calibrator["estimator"], calibrator["method"], p),
 )
 base_p = path["base_p"]
 
 # --------------------------------------------------------------------------- #
-# prediction summary - a full width strip, so the chart below gets the room
-# it needs for its labels at every screen size
+# assessment
 # --------------------------------------------------------------------------- #
-st.markdown("### Prediction")
+st.subheader("Assessment")
 
 head1, head2, head3 = st.columns([1, 1, 1.15], gap="medium")
 
@@ -204,46 +219,52 @@ with head1:
 
 with head2:
     st.markdown(
-        percentile_card(percentile, threshold, probability),
+        percentile_card(percentile, threshold, probability, target_recall),
         unsafe_allow_html=True,
     )
 
 with head3:
     st.markdown(
         note_card(
-            "About this number",
-            "The model is class weighted to favour recall, so its raw output "
-            "is a ranking score. A calibrator fitted on out-of-fold "
-            "predictions turns it into the probability shown here - the "
-            "average predicted risk matches the churn rate almost exactly.",
-            note=f"Threshold {threshold:.0%} · {cm['tp']} churners caught, "
-                 f"{cm['fn']} missed, {cm['fp']} loyal customers contacted.",
+            "Interpretation",
+            "The displayed probability is calibrated on out-of-fold training "
+            "predictions. A score of 30% means that roughly 30 in 100 "
+            "comparable customers churned.",
+            note=f"Threshold {threshold:.0%} · {cm['tp']} churners identified, "
+                 f"{cm['fn']} missed, {cm['fp']} non-churners flagged.",
         ),
         unsafe_allow_html=True,
     )
 
-with st.expander("Model performance (test set)"):
+with st.expander("Model performance (held-out test set)"):
     st.markdown(
-        f"- ROC-AUC: **{m['roc_auc']}**\n"
-        f"- PR-AUC: **{m['pr_auc']}**\n"
-        f"- Precision: **{m['precision']}**\n"
-        f"- Recall: **{m['recall']}**\n"
-        f"- F1: **{m['f1']}**\n"
-        f"- Brier score: **{m['brier']}** (lower is better)\n"
-        f"- Cross-validated ROC-AUC: "
-        f"**{meta['metrics']['cv']['roc_auc_mean']}** "
-        f"(+/- {meta['metrics']['cv']['roc_auc_std']})"
+        f"""
+| Metric | Value |
+|---|---:|
+| ROC-AUC | {m['roc_auc']:.3f} |
+| PR-AUC | {m['pr_auc']:.3f} |
+| Precision | {m['precision']:.3f} |
+| Recall | {m['recall']:.3f} |
+| F1 | {m['f1']:.3f} |
+| Brier score | {m['brier']:.3f} |
+| Log loss | {m['log_loss']:.3f} |
+| Cross-validated ROC-AUC | {meta['metrics']['cv']['roc_auc_mean']:.3f} ± {meta['metrics']['cv']['roc_auc_std']:.3f} |
+"""
     )
     st.caption(
         f"Model: {meta['model']['name']}, selected on "
-        f"{meta['selection']['cv_folds']}-fold cross-validation over the "
-        "training split only."
+        f"{meta['selection']['cv_folds']}-fold stratified cross-validation "
+        "over the training split only."
     )
 
 # --------------------------------------------------------------------------- #
-# explain
+# explanation
 # --------------------------------------------------------------------------- #
-st.markdown("### Why this prediction?")
+st.subheader("Risk drivers")
+st.caption(
+    "Bars show the change in churn probability as each factor is applied in "
+    "order of impact, starting from the model baseline."
+)
 
 segment_labels, segment_names, segment_values = [], [], []
 for indices, _ in path["segments"]:
@@ -262,16 +283,15 @@ st.plotly_chart(
                  path["final_p"], name=segment_names, value=segment_values),
     width="stretch", theme=None, config={"displayModeBar": False})
 st.caption(
-    f"Red pushes the customer toward churn, blue away. Bars are the change "
-    f"in churn probability when that factor is applied on top of the ones "
-    f"above it (ordered by impact), starting from the population average of "
-    f"{path['base_p']:.0%} and ending at {path['final_p']:.0%}. "
-    f"Hover a bar for the exact numbers. "
-    f"Total charges were entered as ${total:,.0f}"
-    + (" (estimated as tenure x monthly charges)." if use_estimate else ".")
+    f"Red bars increase churn risk; blue bars reduce it. The path starts at "
+    f"the model baseline of {path['base_p']:.0%} and ends at this "
+    f"customer's score of {path['final_p']:.0%}. Total charges were entered as "
+    f"${total:,.0f}"
+    + (" (estimated as tenure multiplied by monthly charges)."
+       if use_estimate else ".")
 )
 
-with st.expander("SHAP detail (log-odds, exact additive attribution)"):
+with st.expander("SHAP attribution (log-odds)"):
     order = np.argsort(-np.abs(explanation["feature_phi"]))[:12]
     shap_labels = [f"{short_names[i]} = {_short(values[i])}" for i in order]
     st.plotly_chart(
@@ -279,32 +299,44 @@ with st.expander("SHAP detail (log-odds, exact additive attribution)"):
                             explanation["base_value"]),
         width="stretch", theme=None, config={"displayModeBar": False})
     st.caption(
-        "SHAP values are additive in log-odds: every bar is the effect of that "
-        "feature on the model's raw output, and the bars add up exactly to the "
-        f"model score (E[f(X)] = {explanation['base_value']:.3f} plus the bars "
-        "gives f(x)). The chart above converts them into probability points. "
-        "One-hot columns are summed back into their original feature, so there "
-        "is one bar per feature rather than one per dummy column."
+        "SHAP values are additive in log-odds. One-hot columns are summed back "
+        "into their original feature, so there is one bar per feature rather "
+        f"than one per encoded column. The base value is "
+        f"{explanation['base_value']:.3f}."
     )
 
-with st.expander("How well calibrated is the model?"):
+with st.expander("Calibration"):
     st.plotly_chart(plot_reliability(meta["calibration_curve"]),
                     width="stretch", theme=None,
                     config={"displayModeBar": False})
     cal = meta["calibration"]
     st.caption(
-        f"Calibration method: **{cal['method']}** "
-        f"(chosen by cross-validated log loss against isotonic). "
-        f"Mean predicted probability on the training set is "
+        f"Calibration method: {cal['method']}, selected by cross-validated log "
+        f"loss. Mean predicted probability on the training set is "
         f"{cal['mean_calibrated_score_train']:.1%} against a base rate of "
         f"{cal['train_base_rate']:.1%}."
+    )
+
+with st.expander("Limitations and intended use"):
+    st.markdown(
+        "- The model is trained on the public IBM Telco sample and has not "
+        "been validated on external data.\n"
+        "- The dataset has no time dimension, so the model cannot capture "
+        "behavioural drift.\n"
+        "- SHAP values describe associations in the model, not causal effects. "
+        "Retention actions should be validated experimentally.\n"
+        "- Total charges are estimated as tenure multiplied by monthly "
+        "charges unless the actual value is entered; this can change the score "
+        "for a small number of customers.\n"
+        "- This application is a demonstration, not a production decision "
+        "system."
     )
 
 st.markdown(
     footer([
         ("Model", meta["model"]["name"]),
+        ("Test ROC-AUC", f"{m['roc_auc']:.3f}"),
         ("Dataset", f"{meta['data']['rows_modeling']:,} customers"),
-        ("Features", f"{len(meta['feature_order'])}"),
         ("Trained", meta["trained_at"][:10]),
     ]),
     unsafe_allow_html=True,
