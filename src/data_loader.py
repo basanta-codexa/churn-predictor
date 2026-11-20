@@ -65,14 +65,12 @@ def _percentiles(raw_scores, quantiles):
     return np.clip(positions / (q.size - 1) * 100.0, 0.0, 100.0)
 
 
-def load_scored_frame():
-    """Score every modelling customer and attach calibrated risk fields."""
-    meta = load_meta()
-    frame = load_model_frame(meta)
+def score_customers(frame, meta, pipe, calibrator):
+    """Score a feature frame and attach calibrated risk fields.
 
-    pipe = joblib.load(MODEL_PATH)
-    calibrator = joblib.load(CALIBRATOR_PATH)
-
+    The caller is responsible for validating that ``frame`` contains every
+    column in ``meta['feature_order']``.
+    """
     raw_scores = pipe.predict_proba(frame[meta["feature_order"]])[:, 1]
     probabilities = apply_calibrator(
         calibrator["estimator"], calibrator["method"], raw_scores)
@@ -86,10 +84,20 @@ def load_scored_frame():
         for percentile, probability in zip(percentiles, probabilities)
     ]
 
-    frame["raw_score"] = raw_scores
-    frame["churn_probability"] = probabilities
-    frame["percentile"] = percentiles
-    frame["risk_band"] = [band["name"] for band in bands]
-    frame["risk_band_label"] = [band["label"] for band in bands]
-    frame["risk_band_color"] = [band["color"] for band in bands]
-    return frame, meta
+    scored = frame.copy()
+    scored["raw_score"] = raw_scores
+    scored["churn_probability"] = probabilities
+    scored["percentile"] = percentiles
+    scored["risk_band"] = [band["name"] for band in bands]
+    scored["risk_band_label"] = [band["label"] for band in bands]
+    scored["risk_band_color"] = [band["color"] for band in bands]
+    return scored
+
+
+def load_scored_frame():
+    """Score every modelling customer and attach calibrated risk fields."""
+    meta = load_meta()
+    frame = load_model_frame(meta)
+    pipe = joblib.load(MODEL_PATH)
+    calibrator = joblib.load(CALIBRATOR_PATH)
+    return score_customers(frame, meta, pipe, calibrator), meta
