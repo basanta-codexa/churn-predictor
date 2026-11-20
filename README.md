@@ -120,7 +120,13 @@ These are descriptive associations in the sample. They should be validated with 
 
 ## Application
 
-The Streamlit application provides:
+The Streamlit application uses a premium light theme with a dark navigation sidebar. Pages are registered explicitly in `app.py` and follow the intended product structure:
+
+- **Overview** — business health and model snapshot;
+- **Predict Churn** — the working individual assessment page;
+- **Customers**, **Retention Insights**, **Model Analytics**, **Settings** — placeholders that document the planned scope for later phases.
+
+The Predict Churn page provides:
 
 - a customer input panel with options and bounds taken from the training data;
 - a calibrated churn probability and a population percentile;
@@ -130,7 +136,7 @@ The Streamlit application provides:
 - a calibration curve and model performance summary;
 - a limitations section for intended use.
 
-To regenerate the screenshot after starting the app, run `python scripts/screenshot.py`. The screenshot helper requires Playwright, which is not part of the runtime requirements.
+The Phase 1 redesign establishes the visual foundation only. Prediction logic is unchanged. To regenerate the screenshot after starting the app, run `python scripts/screenshot.py`. The screenshot helper requires Playwright, which is not part of the runtime requirements.
 
 ## Reproducing the results
 
@@ -161,19 +167,25 @@ The tests cover the committed artifacts, calibration behaviour, SHAP aggregation
 
 ```text
 .
-├── app.py                     # Streamlit application
+├── app.py                     # Streamlit router and page registration
 ├── .streamlit/config.toml     # Theme configuration
+├── pages/                     # Named application pages
+│   ├── 1_Overview.py
+│   ├── 2_Predict_Churn.py     # Working assessment page
+│   └── 3-6_*.py               # Placeholders for later phases
 ├── src/
+│   ├── design.py              # Colour, typography, spacing, and reusable components
+│   ├── page_shell.py          # Shared page setup
+│   ├── theme.py               # CSS and HTML components
 │   ├── train.py               # Training, selection, calibration, evaluation
 │   ├── predictor.py           # Scoring and SHAP logic (no Streamlit dependency)
-│   ├── charts.py              # Plotly figures
-│   └── theme.py               # CSS and HTML components
+│   └── charts.py              # Plotly figures
 ├── tests/                     # pytest suite
-├── notebooks/                 # Exploratory analysis and modelling narrative
-├── scripts/                   # Notebook builder and screenshot helper
-├── models/                    # Model, calibrator, and metadata artifacts
-├── data/                      # Raw, cleaned, and modelling datasets
-├── images/                    # Figures used in the documentation
+├── notebooks/                  # Exploratory analysis and modelling narrative
+├── scripts/                    # Notebook builder and screenshot helper
+├── models/                     # Model, calibrator, and metadata artifacts
+├── data/                       # Raw, cleaned, and modelling datasets
+├── images/                     # Figures used in the documentation
 ├── pytest.ini
 └── requirements.txt
 ```
