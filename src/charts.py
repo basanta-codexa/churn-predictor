@@ -254,6 +254,95 @@ def plot_reliability(curve):
     return fig
 
 
+def plot_roc_curve(false_positive_rate, true_positive_rate, auc):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[0, 1], y=[0, 1], mode="lines", name="Random",
+        line=dict(color=GREY, width=1, dash="dash"), hoverinfo="skip"))
+    fig.add_trace(go.Scatter(
+        x=false_positive_rate, y=true_positive_rate, mode="lines",
+        name=f"Model (AUC {auc:.3f})",
+        line=dict(color=BLUE, width=2),
+        hovertemplate="False positive rate %{x:.2f}<br>"
+                      "True positive rate %{y:.2f}<extra></extra>"))
+    layout = _base_layout(360)
+    layout.update(
+        title=dict(text="ROC curve (held-out test set)",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(title=dict(text="False positive rate",
+                              font=dict(size=12, color=TEXT)),
+                   range=[0, 1], tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False),
+        yaxis=dict(title=dict(text="True positive rate",
+                              font=dict(size=12, color=TEXT)),
+                   range=[0, 1], tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False),
+        legend=dict(font=dict(size=11, color=TEXT), orientation="h",
+                    y=1.12, x=0),
+    )
+    fig.update_layout(layout)
+    return fig
+
+
+def plot_pr_curve(recall, precision, average_precision, baseline):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[0, 1], y=[baseline, baseline], mode="lines",
+        name=f"Baseline ({baseline:.2f})",
+        line=dict(color=GREY, width=1, dash="dash"), hoverinfo="skip"))
+    fig.add_trace(go.Scatter(
+        x=recall, y=precision, mode="lines",
+        name=f"Model (AP {average_precision:.3f})",
+        line=dict(color=BLUE, width=2),
+        hovertemplate="Recall %{x:.2f}<br>Precision %{y:.2f}<extra></extra>"))
+    layout = _base_layout(360)
+    layout.update(
+        title=dict(text="Precision-recall curve (held-out test set)",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(title=dict(text="Recall", font=dict(size=12, color=TEXT)),
+                   range=[0, 1], tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False),
+        yaxis=dict(title=dict(text="Precision", font=dict(size=12, color=TEXT)),
+                   range=[0, 1], tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False),
+        legend=dict(font=dict(size=11, color=TEXT), orientation="h",
+                    y=1.12, x=0),
+    )
+    fig.update_layout(layout)
+    return fig
+
+
+def plot_confusion_matrix(confusion):
+    """Heatmap of the stored confusion matrix."""
+    tn = int(confusion["tn"])
+    fp = int(confusion["fp"])
+    fn = int(confusion["fn"])
+    tp = int(confusion["tp"])
+    z = [[tn, fp], [fn, tp]]
+    fig = go.Figure(go.Heatmap(
+        z=z,
+        x=["Predicted stay", "Predicted churn"],
+        y=["Actual stay", "Actual churn"],
+        text=[[str(tn), str(fp)], [str(fn), str(tp)]],
+        texttemplate="%{text}",
+        textfont=dict(size=16, color=TEXT),
+        colorscale="Blues",
+        showscale=False,
+        hovertemplate="%{y} / %{x}<br>Customers: %{z}<extra></extra>",
+    ))
+    layout = _base_layout(300)
+    layout.update(
+        title=dict(text="Confusion matrix (held-out test set)",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(tickfont=dict(size=12, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True),
+        yaxis=dict(tickfont=dict(size=12, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True, autorange="reversed"),
+    )
+    fig.update_layout(layout)
+    return fig
+
+
 def plot_global_drivers(summary):
     """Diverging bar chart of average SHAP impact per raw feature."""
     ordered = summary.sort_values("absolute", ascending=True)

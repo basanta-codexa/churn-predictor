@@ -36,6 +36,17 @@ def load_meta():
     return json.loads(META_PATH.read_text(encoding="utf-8"))
 
 
+def test_split_indices(frame):
+    """Return the held-out row positions used by ``src/train.py``."""
+    from sklearn.model_selection import train_test_split
+
+    indices = np.arange(len(frame))
+    _, test_indices = train_test_split(
+        indices, test_size=0.2, random_state=42,
+        stratify=frame["Churn_Value"].to_numpy())
+    return test_indices
+
+
 def load_model_frame(meta):
     """Return the deduplicated modelling frame with its original CustomerID."""
     raw = pd.read_csv(RAW_PATH)
