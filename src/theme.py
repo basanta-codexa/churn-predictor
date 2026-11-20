@@ -1,349 +1,456 @@
 """Presentation layer for the churn application.
 
-The interface uses a restrained dark SaaS style: a near-black canvas, solid
-bordered surfaces, one accent colour, and clear typographic hierarchy. There
-are no gradients, glass effects, or decorative animation. The CSS is injected
-once at the top of the app.
+A premium light theme: warm grey canvas, white surfaces, deep navy text, and a
+single cobalt accent. The sidebar is dark to give the layout weight and clear
+separation between navigation and content. All colours, spacing, typography,
+and radius values come from :mod:`design`.
 """
 from __future__ import annotations
 
-CSS = """
-<style>
-:root {
-    --bg: #0B0D12;
-    --surface: #14171F;
-    --surface-muted: #1A1E28;
-    --border: #242936;
-    --border-strong: #333A4A;
-    --text: #E6E8EE;
-    --text-secondary: #C3C8D4;
-    --muted: #8B90A0;
-    --accent: #7C8CFF;
-    --accent-soft: rgba(124, 140, 255, 0.12);
-    --green: #4ADE80;
-    --green-soft: rgba(34, 197, 94, 0.12);
-    --amber: #FBBF24;
-    --amber-soft: rgba(245, 158, 11, 0.12);
-    --red: #F87171;
-    --red-soft: rgba(239, 68, 68, 0.12);
-    --slate: #94A3B8;
-    --slate-soft: rgba(148, 163, 184, 0.12);
-    --radius: 12px;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-}
+from design import (COLOR, SPACE, RADIUS, FONT, SHADOW, variables_css,
+                    sidebar_brand, section_header, panel, phase_placeholder)
 
-html, body {
-    background: var(--bg);
-    color: var(--text);
-}
+CSS = "<style>\n" + variables_css() + f"""
+html, body {{
+    background: var(--canvas);
+    color: var(--ink);
+}}
 
 .stApp,
 [data-testid="stAppViewContainer"],
 section.main,
 [data-testid="stMain"],
 [data-testid="stMainBlockContainer"],
-.block-container {
-    background: var(--bg) !important;
-}
+.block-container {{
+    background: var(--canvas) !important;
+}}
 
-.block-container {
-    max-width: 1240px;
-    padding-top: 1.5rem;
-    padding-bottom: 2.5rem;
-}
+.block-container {{
+    max-width: 1280px;
+    padding-top: {SPACE['xl']};
+    padding-bottom: {SPACE['2xl']};
+}}
 
-[data-testid="stHeader"] {
+[data-testid="stHeader"] {{
     background: transparent;
-}
+}}
 
 #MainMenu,
 footer,
-[data-testid="stDecoration"] {
+[data-testid="stDecoration"] {{
     display: none;
-}
+}}
 
 .stApp,
-.stApp *:not([data-testid="stIconMaterial"]) {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 "Helvetica Neue", Arial, sans-serif;
-}
+.stApp *:not([data-testid="stIconMaterial"]) {{
+    font-family: var(--font-sans);
+}}
 
-[data-testid="stIconMaterial"] {
+[data-testid="stIconMaterial"] {{
     font-family: "Material Symbols Rounded" !important;
     font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-}
+}}
 
-.stApp {
-    font-size: 0.94rem;
-}
+.stApp {{
+    font-size: 0.95rem;
+}}
 
-.stApp p {
-    line-height: 1.55;
-    color: var(--text-secondary);
-}
+.stApp p {{
+    line-height: 1.6;
+    color: var(--ink-soft);
+}}
 
 .stApp h1,
 .stApp h2,
-.stApp h3 {
-    color: var(--text);
-    letter-spacing: -0.015em;
-}
+.stApp h3 {{
+    color: var(--ink);
+    letter-spacing: -0.02em;
+}}
 
-.stApp h3 {
-    margin-top: 1.6rem;
-    margin-bottom: 0.6rem;
-}
+.stApp h3 {{
+    margin-top: {SPACE['xl']};
+    margin-bottom: {SPACE['sm']};
+}}
 
-.stApp [data-testid="stCaptionContainer"] p {
+.stApp [data-testid="stCaptionContainer"] p {{
     color: var(--muted);
-}
+}}
 
-.stApp hr {
+.stApp hr {{
     border-color: var(--border);
-}
+}}
 
 /* --------------------------------------------------------------- header */
-.hero {
-    padding: 0.25rem 0 1.15rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1.15rem;
-}
+.hero {{
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: 1.25rem 1.4rem;
+    margin-bottom: {SPACE['lg']};
+}}
 
-.hero-badge {
+.hero-badge {{
     display: inline-block;
     color: var(--accent);
-    font-size: 0.72rem;
+    background: var(--accent-soft);
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
+    padding: 0.25rem 0.6rem;
     text-transform: uppercase;
-    margin-bottom: 0.45rem;
-}
+    margin-bottom: 0.65rem;
+}}
 
-.hero-title {
-    color: var(--text);
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.025em;
+.hero-title {{
+    color: var(--ink);
+    font-size: 2.15rem;
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: -0.035em;
     margin: 0;
-}
+}}
 
-.hero-sub {
-    color: var(--muted);
-    font-size: 0.95rem;
-    line-height: 1.55;
+.hero-sub {{
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+    line-height: 1.6;
     margin-top: 0.55rem;
-    max-width: 72ch;
-}
+    max-width: 74ch;
+}}
 
-.hero-chips {
+.hero-chips {{
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.15rem;
-    margin-top: 0.9rem;
-}
+    gap: 0.45rem 1.25rem;
+    margin-top: 1rem;
+}}
 
-.chip {
+.chip {{
     color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 500;
-}
+}}
 
-.chip b {
-    color: var(--text);
-    font-weight: 650;
-}
+.chip b {{
+    color: var(--ink);
+    font-weight: 700;
+}}
 
 /* ------------------------------------------------------------ kpi strip */
-.kpi-row {
+.kpi-row {{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 0.75rem;
-    margin: 0.9rem 0 1.2rem;
-}
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: {SPACE['md']};
+    margin: 0 0 {SPACE['xl']};
+}}
 
-.kpi {
+.kpi {{
     background: var(--surface);
     border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
     border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 0.85rem 1rem;
-}
+    box-shadow: var(--shadow-panel);
+    padding: 0.95rem 1.05rem;
+}}
 
-.kpi-value {
-    color: var(--text);
-    font-size: 1.5rem;
-    font-weight: 700;
+.kpi-value {{
+    color: var(--ink);
+    font-size: 1.65rem;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-}
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}}
 
-.kpi-label {
+.kpi-label {{
     color: var(--muted);
     font-size: 0.69rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
-    margin-top: 0.22rem;
-}
+    margin-top: 0.3rem;
+}}
 
-.kpi-note {
+.kpi-note {{
     color: var(--muted);
-    font-size: 0.75rem;
-    margin-top: 0.18rem;
-}
+    font-size: 0.76rem;
+    margin-top: 0.2rem;
+}}
 
 /* ------------------------------------------------------------ risk card */
-.card {
+.card {{
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-card);
     height: 100%;
-    padding: 1rem 1.1rem;
-}
+    padding: 1.1rem 1.2rem;
+}}
 
-.card-label {
+.card-label {{
     color: var(--muted);
     font-size: 0.69rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
-    margin-bottom: 0.35rem;
-}
+    margin-bottom: 0.4rem;
+}}
 
-.card-value {
-    color: var(--text);
-    font-size: 2rem;
-    font-weight: 700;
+.card-value {{
+    color: var(--ink);
+    font-size: 2.15rem;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
-}
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+}}
 
-.card-note {
+.card-note {{
     color: var(--muted);
-    font-size: 0.82rem;
-    line-height: 1.5;
-    margin-top: 0.45rem;
-}
+    font-size: 0.83rem;
+    line-height: 1.55;
+    margin-top: 0.5rem;
+}}
 
-.pill {
+.pill {{
     display: inline-flex;
     align-items: center;
     border: 1px solid transparent;
-    border-radius: 999px;
-    font-size: 0.71rem;
-    font-weight: 650;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 700;
     letter-spacing: 0.02em;
-    margin-top: 0.5rem;
-    padding: 0.2rem 0.58rem;
-}
+    margin-top: 0.55rem;
+    padding: 0.22rem 0.62rem;
+}}
 
-.pill-green  { background: var(--green-soft); color: var(--green); border-color: #4ADE8033; }
-.pill-orange { background: var(--amber-soft); color: var(--amber); border-color: #FBBF2433; }
-.pill-red    { background: var(--red-soft); color: var(--red); border-color: #F8717133; }
-.pill-slate  { background: var(--slate-soft); color: var(--slate); border-color: #94A3B833; }
+.pill-green  {{ background: #E7F6F1; color: #269B78; border-color: #A7DCC8; }}
+.pill-orange {{ background: #FDF4E5; color: #D99A32; border-color: #F2D9A6; }}
+.pill-red    {{ background: #FCEDEC; color: #D9534F; border-color: #F2C4C2; }}
+.pill-slate  {{ background: #F1F4F8; color: #667085; border-color: #E6EAF0; }}
 
 /* ----------------------------------------------------------- risk meter */
-.meter-wrap {
-    margin-top: 0.9rem;
-}
+.meter-wrap {{
+    margin-top: 1rem;
+}}
 
-.meter {
+.meter {{
     position: relative;
     height: 8px;
-    border-radius: 999px;
-    background: #232936;
-}
+    border-radius: var(--radius-pill);
+    background: #E8EDF4;
+}}
 
-.meter-fill {
+.meter-fill {{
     height: 100%;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--accent);
-}
+}}
 
-.meter-marker {
+.meter-marker {{
     position: absolute;
     top: -4px;
     width: 2px;
     height: 16px;
     border-radius: 1px;
-    background: var(--text);
-}
+    background: var(--ink);
+}}
 
-.meter-legend {
+.meter-legend {{
     display: flex;
     justify-content: space-between;
     gap: 0.4rem;
     color: var(--muted);
-    font-size: 0.69rem;
-    margin-top: 0.42rem;
-}
+    font-size: 0.7rem;
+    margin-top: 0.45rem;
+}}
 
-.meter-legend span {
+.meter-legend span {{
     white-space: nowrap;
-}
+}}
 
-.meter-legend .mid {
-    color: var(--text-secondary);
+.meter-legend .mid {{
+    color: var(--ink-soft);
     font-weight: 600;
-}
+}}
 
-/* --------------------------------------------------------------- charts */
-[data-testid="stPlotlyChart"] {
+/* ---------------------------------------------------- sections & panels */
+.section-head {{
+    margin: {SPACE['xl']} 0 {SPACE['md']};
+}}
+
+.section-title {{
+    color: var(--ink);
+    font-size: 1.05rem;
+    font-weight: 700;
+}}
+
+.section-caption {{
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-top: 0.2rem;
+}}
+
+.panel {{
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-panel);
+    margin-bottom: {SPACE['md']};
+    overflow: hidden;
+}}
+
+.panel-head {{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: {SPACE['md']};
+    padding: 0.9rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+}}
+
+.panel-title {{
+    color: var(--ink);
+    font-size: 0.95rem;
+    font-weight: 700;
+}}
+
+.panel-caption {{
+    color: var(--muted);
+    font-size: 0.79rem;
+    margin-top: 0.15rem;
+}}
+
+.panel-body {{
+    padding: 1rem 1.1rem;
+}}
+
+.phase-badge {{
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.22rem 0.55rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+}}
+
+.placeholder-lead {{
+    color: var(--ink-soft);
+    margin-bottom: 0.6rem;
+}}
+
+.planned-list {{
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin: 0;
+    padding-left: 1.1rem;
+}}
+
+.planned-list li {{
+    margin-bottom: 0.3rem;
+}}
+
+/* --------------------------------------------------------------- charts */
+[data-testid="stPlotlyChart"] {{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-panel);
     padding: 0.25rem;
-}
+}}
 
 /* ------------------------------------------------------------- expander */
-[data-testid="stExpander"] {
+[data-testid="stExpander"] {{
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
-}
+}}
 
-[data-testid="stExpander"] summary:hover {
-    background: var(--surface-muted);
-}
+[data-testid="stExpander"] summary:hover {{
+    background: var(--surface-alt);
+}}
 
 /* -------------------------------------------------------------- sidebar */
-[data-testid="stSidebar"] {
-    background: #0E1016 !important;
-    border-right: 1px solid var(--border);
-}
+[data-testid="stSidebar"] {{
+    background: {COLOR['sidebar']} !important;
+    border-right: 1px solid {COLOR['sidebar_surface']};
+}}
 
-[data-testid="stSidebar"] .block-container {
-    padding-top: 1.2rem;
-}
+[data-testid="stSidebar"] .block-container {{
+    padding-top: {SPACE['lg']};
+}}
+
+.brand {{
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.35rem 0 0.9rem;
+    border-bottom: 1px solid {COLOR['sidebar_surface']};
+    margin-bottom: 0.8rem;
+}}
+
+.brand-mark {{
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: grid;
+    place-items: center;
+    background: var(--accent);
+    color: #FFFFFF;
+    border-radius: 9px;
+    font-weight: 800;
+    font-size: 0.95rem;
+}}
+
+.brand-name {{
+    color: #F8FAFC;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+}}
+
+.brand-sub {{
+    color: #94A3B8;
+    font-size: 0.72rem;
+    margin-top: 0.1rem;
+}}
+
+.brand-version {{
+    color: #64748B;
+    font-size: 0.66rem;
+    margin-top: 0.3rem;
+}}
 
 [data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 {
-    color: var(--text);
-    font-size: 0.72rem;
+[data-testid="stSidebar"] h3 {{
+    color: #E2E8F0 !important;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.09em;
+    margin-top: 1.2rem;
     text-transform: uppercase;
-    margin-top: 1.15rem;
-}
+}}
 
-[data-testid="stSidebar"] p {
-    color: var(--muted);
+[data-testid="stSidebar"] p {{
+    color: #94A3B8;
     font-size: 0.78rem;
-}
+}}
 
-[data-testid="stSidebar"] label p {
-    color: var(--text-secondary);
+[data-testid="stSidebar"] label p {{
+    color: #CBD5E1;
     font-size: 0.84rem;
-}
+}}
 
 /* --------------------------------------------------------------- footer */
-.footer {
+.footer {{
     display: flex;
     flex-wrap: wrap;
     gap: 1.25rem;
@@ -351,23 +458,23 @@ footer,
     border-top: 1px solid var(--border);
     color: var(--muted);
     font-size: 0.75rem;
-    margin-top: 2rem;
-    padding-top: 1rem;
-}
+    margin-top: {SPACE['2xl']};
+    padding-top: {SPACE['lg']};
+}}
 
-.footer strong {
-    color: var(--text);
-    font-weight: 650;
-}
+.footer strong {{
+    color: var(--ink);
+    font-weight: 700;
+}}
 </style>
 """
 
 #: Background, foreground and solid accent for each risk band.
 BAND_COLOURS = {
-    "green": ("#4ADE8020", "#4ADE80", "#4ADE80"),
-    "orange": ("#FBBF2420", "#FBBF24", "#FBBF24"),
-    "red": ("#F8717120", "#F87171", "#F87171"),
-    "slate": ("#94A3B820", "#94A3B8", "#94A3B8"),
+    "green": ("#E7F6F1", "#269B78", "#269B78"),
+    "orange": ("#FDF4E5", "#D99A32", "#D99A32"),
+    "red": ("#FCEDEC", "#D9534F", "#D9534F"),
+    "slate": ("#F1F4F8", "#667085", "#667085"),
 }
 
 
