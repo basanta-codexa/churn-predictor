@@ -1,22 +1,18 @@
-"""Figures for the churn app.
+"""Plotly figures for the churn application.
 
-The charts are built with Plotly rather than Matplotlib on purpose. Streamlit
-lays a Matplotlib figure out at a fixed physical size and then scales the
-raster to fit the column, so on a narrow screen the text ends up at four or
-five pixels and is unreadable. Plotly renders SVG that re-lays itself out, so
-the labels keep a constant size whatever the browser width is, and the
-hover tooltips show the exact numbers.
+Plotly is used instead of Matplotlib so the charts remain responsive and
+readable at different viewport widths. All figures share the same neutral
+palette and typography as the rest of the interface.
 """
 from __future__ import annotations
 
 import plotly.graph_objects as go
 
-RED = "#FB7185"
-BLUE = "#60A5FA"
-GREY = "#8A90A8"
-TEXT = "#C3C9DC"
-MUTED = "#6E7691"
-GRID = "rgba(255,255,255,0.07)"
+RED = "#B91C1C"
+BLUE = "#1D4ED8"
+GREY = "#94A3B8"
+TEXT = "#111827"
+GRID = "rgba(17,24,39,0.08)"
 
 #: Long category values are trimmed so the axis labels stay readable.
 SHORT_VALUES = {
@@ -67,7 +63,6 @@ def plot_drivers(labels, steps, base_p, final_p, name=None, value=None):
     # The axis starts at zero (it is a probability) but is only extended as
     # far as the bars actually reach, so the chart is not mostly empty.
     highest = max(bases + after)
-    lowest = min(min(bases), min(after))
     x_max = min(1.0, max(0.45, highest + 0.10))
     x_min = 0.0
     height = 120 + 36 * max(len(labels), 1)
@@ -90,10 +85,10 @@ def plot_drivers(labels, steps, base_p, final_p, name=None, value=None):
 
     fig.update_layout(
         title=dict(
-            text=("What moves this customer's churn risk"
-                  f"<br><sup>this customer {final_p:.0%} · "
-                  f"population average {base_p:.0%}</sup>"),
-            font=dict(size=15, color="#EDEFF7"),
+            text=("Contribution to churn probability"
+                  f"<br><sup>customer {final_p:.0%} · "
+                  f"model baseline {base_p:.0%}</sup>"),
+            font=dict(size=14, color=TEXT),
             x=0,
             xanchor="left",
             y=0.98,
@@ -119,17 +114,17 @@ def plot_drivers(labels, steps, base_p, final_p, name=None, value=None):
         bargap=0.35,
         height=height,
         margin=dict(l=8, r=72, t=76, b=52),
-        font=dict(family="Inter, sans-serif", color=TEXT),
+        font=dict(family="Segoe UI, Arial, sans-serif", color=TEXT),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        hoverlabel=dict(bgcolor="#14141F", bordercolor="rgba(255,255,255,0.14)",
-                        font=dict(size=12, color="#E8EAF2")),
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E2E5EA",
+                        font=dict(size=12, color=TEXT)),
     )
 
     # population baseline and where this customer ends up
     fig.add_vline(x=base_p, line=dict(color=GREY, width=1, dash="dash"),
                   layer="below")
-    fig.add_vline(x=final_p, line=dict(color="#555", width=1.5), layer="below")
+    fig.add_vline(x=final_p, line=dict(color=TEXT, width=1.5), layer="below")
     return fig
 
 
@@ -170,8 +165,8 @@ def plot_shap_waterfall(labels, phi, base_value):
         hovertext=hover,
     ))
     fig.update_layout(
-        title=dict(text="SHAP values (log-odds), summed to the model score",
-                   font=dict(size=14, color="#EDEFF7"), x=0, xanchor="left"),
+        title=dict(text="SHAP attribution (log-odds)",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
         xaxis=dict(title=dict(text="Impact on the model score (log-odds)",
                               font=dict(size=12, color=TEXT)),
                    range=[x_min, x_max],
@@ -185,11 +180,11 @@ def plot_shap_waterfall(labels, phi, base_value):
         bargap=0.35,
         height=120 + 34 * max(len(labels), 1),
         margin=dict(l=8, r=72, t=56, b=52),
-        font=dict(family="Inter, sans-serif", color=TEXT),
+        font=dict(family="Segoe UI, Arial, sans-serif", color=TEXT),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        hoverlabel=dict(bgcolor="#14141F", bordercolor="rgba(255,255,255,0.14)",
-                        font=dict(size=12, color="#E8EAF2")),
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E2E5EA",
+                        font=dict(size=12, color=TEXT)),
     )
     fig.add_vline(
         x=base_value, line=dict(color=GREY, width=1, dash="dash"),
@@ -202,22 +197,39 @@ def plot_shap_waterfall(labels, phi, base_value):
 
 def plot_reliability(curve):
     """Reliability diagram: predicted probability against observed churn rate."""
+    predicted = curve["predicted"]
+    actual = curve["actual"]
+    counts = curve.get("counts")
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=[0, 1], y=[0, 1], mode="lines", name="perfect calibration",
+        x=[0, 1], y=[0, 1], mode="lines", name="Perfect calibration",
         line=dict(color=GREY, width=1, dash="dash"),
         hoverinfo="skip",
     ))
+
+    marker = dict(size=8, color=RED, line=dict(width=1, color="#FFFFFF"))
+    hover = "Predicted %{x:.1%}<br>Observed %{y:.1%}<extra></extra>"
+    if counts and len(counts) == len(predicted):
+        peak = max(counts) or 1
+        marker["size"] = [
+            max(6, min(18, 6 + 12 * (count / peak) ** 0.5))
+            for count in counts
+        ]
+        hover = ("Predicted %{x:.1%}<br>Observed %{y:.1%}"
+                 "<br>n = %{customdata}<extra></extra>")
+
     fig.add_trace(go.Scatter(
-        x=curve["predicted"], y=curve["actual"], mode="lines+markers",
-        name="this model",
+        x=predicted, y=actual, mode="lines+markers",
+        name="Model",
         line=dict(color=RED, width=2),
-        marker=dict(size=9),
-        hovertemplate=("predicted %{x:.1%}<br>observed %{y:.1%}<extra></extra>"),
+        marker=marker,
+        customdata=counts,
+        hovertemplate=hover,
     ))
     fig.update_layout(
-        title=dict(text="Reliability diagram (test set)",
-                   font=dict(size=13, color="#EDEFF7"), x=0, xanchor="left"),
+        title=dict(text="Calibration on the held-out test set",
+                   font=dict(size=13, color=TEXT), x=0, xanchor="left"),
         xaxis=dict(title=dict(text="Predicted churn probability",
                               font=dict(size=12, color=TEXT)),
                    range=[0, 1], tickformat=".0%",
@@ -233,7 +245,7 @@ def plot_reliability(curve):
         margin=dict(l=8, r=16, t=52, b=52),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        hoverlabel=dict(bgcolor="#14141F", bordercolor="rgba(255,255,255,0.14)",
-                        font=dict(size=12, color="#E8EAF2")),
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E2E5EA",
+                        font=dict(size=12, color=TEXT)),
     )
     return fig
