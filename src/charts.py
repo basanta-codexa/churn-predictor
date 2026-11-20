@@ -265,7 +265,8 @@ def plot_roc_curve(false_positive_rate, true_positive_rate, auc):
         line=dict(color=BLUE, width=2),
         hovertemplate="False positive rate %{x:.2f}<br>"
                       "True positive rate %{y:.2f}<extra></extra>"))
-    layout = _base_layout(360)
+    layout = _base_layout(380)
+    layout["margin"]["l"] = 90
     layout.update(
         title=dict(text="ROC curve (held-out test set)",
                    font=dict(size=14, color=TEXT), x=0, xanchor="left"),
@@ -295,7 +296,8 @@ def plot_pr_curve(recall, precision, average_precision, baseline):
         name=f"Model (AP {average_precision:.3f})",
         line=dict(color=BLUE, width=2),
         hovertemplate="Recall %{x:.2f}<br>Precision %{y:.2f}<extra></extra>"))
-    layout = _base_layout(360)
+    layout = _base_layout(380)
+    layout["margin"]["l"] = 90
     layout.update(
         title=dict(text="Precision-recall curve (held-out test set)",
                    font=dict(size=14, color=TEXT), x=0, xanchor="left"),
@@ -325,12 +327,14 @@ def plot_confusion_matrix(confusion):
         y=["Actual stay", "Actual churn"],
         text=[[str(tn), str(fp)], [str(fn), str(tp)]],
         texttemplate="%{text}",
-        textfont=dict(size=16, color=TEXT),
-        colorscale="Blues",
+        textfont=dict(size=16, color="#FFFFFF"),
+        colorscale=[[0.0, "#2E5FBF"], [1.0, "#17306B"]],
         showscale=False,
         hovertemplate="%{y} / %{x}<br>Customers: %{z}<extra></extra>",
     ))
-    layout = _base_layout(300)
+    layout = _base_layout(320)
+    layout["margin"]["l"] = 100
+    layout["margin"]["b"] = 60
     layout.update(
         title=dict(text="Confusion matrix (held-out test set)",
                    font=dict(size=14, color=TEXT), x=0, xanchor="left"),
