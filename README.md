@@ -135,7 +135,7 @@ flowchart TD
 │   └── charts.py              # Plotly figures
 ├── tests/                     # pytest suite
 ├── docs/                      # Deployment documentation
-├── scripts/                   # Screenshot and notebook helpers
+├── scripts/                   # Notebook helper
 ├── notebooks/                 # Exploratory analysis
 ├── models/                    # Model, calibrator, and metadata
 ├── data/                      # Raw, cleaned, and modelling datasets
@@ -144,8 +144,7 @@ flowchart TD
 ├── LICENSE
 ├── README.md
 ├── pytest.ini
-├── requirements.txt
-└── requirements-dev.txt
+└── requirements.txt
 ```
 
 ## 9. Installation
@@ -160,12 +159,6 @@ streamlit run app.py
 ```
 
 Open the URL printed by Streamlit, usually `http://localhost:8501`.
-
-For development tooling, install the dev requirements instead:
-
-```bash
-pip install -r requirements-dev.txt
-```
 
 ## 10. Usage
 

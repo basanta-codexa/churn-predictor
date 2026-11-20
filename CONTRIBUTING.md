@@ -7,10 +7,8 @@ Contributions are welcome. Please keep changes small, focused, and verifiable.
 ```bash
 python -m venv venv
 venv\Scripts\activate        # macOS/Linux: source venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -r requirements.txt
 ```
-
-The runtime app only needs `requirements.txt`. `requirements-dev.txt` adds Playwright for screenshot capture.
 
 ## Workflow
 
@@ -27,12 +25,6 @@ pytest tests
 streamlit run app.py
 ```
 
-For screenshot updates, start the app and run:
-
-```bash
-python scripts/capture_screenshots.py http://127.0.0.1:8502
-```
-
 ## Ground rules
 
 - Do not retrain the model for documentation or styling changes.
@@ -40,7 +32,7 @@ python scripts/capture_screenshots.py http://127.0.0.1:8502
 - Do not invent metrics, customer records, or business statistics.
 - Preserve the calibrated prediction pipeline.
 - Keep the existing tests passing.
-- Avoid adding dependencies that are not required by the runtime or the screenshot tooling.
+- Avoid adding unnecessary dependencies.
 
 ## Pull requests
 

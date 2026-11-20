@@ -56,11 +56,3 @@ pip install -r requirements.txt
 streamlit run app.py
 pytest tests
 ```
-
-To regenerate the README screenshot after starting the app:
-
-```bash
-python scripts/screenshot.py
-```
-
-The screenshot helper requires Playwright and a Chromium browser, which are not part of the runtime requirements.
