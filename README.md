@@ -189,7 +189,6 @@ The tests cover the committed artifacts, calibration behaviour, SHAP aggregation
 ├── docs/                      # Deployment documentation
 ├── notebooks/                  # Exploratory analysis and modelling narrative
 ├── scripts/                    # Notebook builder and screenshot helper
-├── improvement.md             # UI transformation blueprint
 ├── models/                     # Model, calibrator, and metadata artifacts
 ├── data/                       # Raw, cleaned, and modelling datasets
 ├── images/                     # Figures used in the documentation
