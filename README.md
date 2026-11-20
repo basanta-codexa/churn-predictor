@@ -1,99 +1,142 @@
-# 📉 Customer Churn Predictor
+# Customer Churn Prediction
 
 [![CI](https://github.com/basanta-codexa/churn-predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/basanta-codexa/churn-predictor/actions/workflows/ci.yml)
 
-An end-to-end machine learning project that predicts which telecom customers are likely to cancel, and explains *why* using SHAP.
+A reproducible machine learning pipeline and Streamlit application for estimating customer churn risk and explaining the factors behind each prediction.
 
-**🔗 Live demo:**  https://sl-churn-predictor.streamlit.app/
+**Live demo:** https://sl-churn-predictor.streamlit.app/
 
-![App screenshot](images/app_screenshot.png)
+## Scope
 
-## Problem
+This is a demonstration project intended to show an end-to-end modelling, calibration, and explanation workflow. It is not a production decision system. The reported metrics come from a single public dataset and have not been validated on external or temporal data.
 
-Acquiring a new customer costs far more than keeping an existing one. This project predicts churn risk from account, demographic and service data so a retention team can focus on the customers most likely to leave.
+## Overview
+
+The project includes:
+
+- a scikit-learn preprocessing and training pipeline;
+- model selection with stratified cross-validation on a training split;
+- probability calibration fitted on out-of-fold predictions;
+- a recall-oriented operating threshold;
+- SHAP explanations aggregated back to the original features;
+- a Streamlit interface for scoring individual customers.
+
+The test split is held out until the final evaluation and is not used for model selection, calibration, or threshold selection.
 
 ## Dataset
 
-IBM Telco Customer Churn dataset (7,043 customers, 26.5% churn rate).
+Source: IBM Telco Customer Churn sample.
 
-**Data leakage handling:** the raw file includes `Churn Label`, `Churn Value`, `Churn Score`, `CLTV` and `Churn Reason`. These are only known after a customer has churned (or are derived from churn), so I removed them from the features. Location and ID columns were also dropped.
+- 7,043 customers and a 26.5% churn rate.
+- 19 features after removing identifiers, location fields, and post-churn columns.
+- 22 exact duplicate observations are removed before splitting.
 
-**Duplicate observations:** dropping `CustomerID` leaves 22 rows that are byte-for-byte identical. They are removed before splitting so the same observation can never appear in both the train and the test split.
+The raw file contains `Churn Label`, `Churn Value`, `Churn Score`, `CLTV`, and `Churn Reason`. These columns are excluded because they are either observed after churn or derived from the churn outcome. Customer identifiers and location fields are also excluded from the model.
 
-## Approach
+## Method
 
-1. **EDA:** examined churn rates across contract type, internet service and payment method.
-2. **Preprocessing:** scikit-learn `Pipeline` with scaling for numeric features and one-hot encoding for categorical ones, fit on training data only to avoid leakage.
-3. **Model selection:** 5-fold stratified cross-validation **on the training split only**. The test split is scored exactly once, at the very end.
-4. **Calibration:** the class-weighted model outputs a ranking score, not a probability. A calibrator fitted on out-of-fold predictions turns it into a real churn probability.
-5. **Operating point:** the decision threshold is chosen on training data for a target recall of 80%, then applied unchanged to the test set.
-6. **Explainability:** SHAP values aggregated back from the 46 encoded columns to the 19 raw features, shown as a waterfall in probability points.
-7. **Deployment:** Streamlit app that shows the calibrated risk, the population percentile and a SHAP waterfall chart for each prediction. The charts are Plotly rather than Matplotlib, so they re-lay out instead of being scaled down to a few pixels on a narrow screen.
-8. **Interface:** a dark "aurora" dashboard - a multi-colour gradient mesh behind the page, frosted glass cards floating on top of it, a gradient display title with a slow shimmer, and a glowing risk meter that marks the retention threshold. The theme lives in [`.streamlit/config.toml`](.streamlit/config.toml) and the components in [`src/theme.py`](src/theme.py).
+### 1. Data preparation
+
+The cleaned dataset is deduplicated, then split into 80% training and 20% test data with stratification on the target. Numeric features are imputed with a constant (zero) and standardised. Categorical features are one-hot encoded with unknown categories ignored. All preprocessing is fitted inside the training folds, not on the full dataset.
+
+### 2. Model selection
+
+Three candidate models are compared with five-fold stratified cross-validation on the training split only:
+
+- logistic regression with balanced class weights;
+- random forest with balanced class weights;
+- XGBoost with `scale_pos_weight` set from the training class ratio.
+
+The candidates are close on cross-validated ROC-AUC, so the one-standard-error rule is used: models within one standard error of the best score are treated as statistically indistinguishable. One standard error is the fold standard deviation divided by √5. XGBoost is selected by a declared preference order because it provides fast, exact TreeSHAP values and a small model artifact.
+
+### 3. Probability calibration
+
+Class weighting makes the raw model output a ranking score rather than a calibrated probability. A sigmoid (Platt) calibrator and an isotonic calibrator are fitted on out-of-fold predictions. The method with the better cross-validated log loss is selected, then refitted on all out-of-fold predictions.
+
+### 4. Operating point
+
+The decision threshold is selected on out-of-fold calibrated training predictions as the highest-precision threshold that still reaches the target recall of 80%. The threshold is then applied unchanged to the test split.
+
+### 5. Explainability
+
+SHAP values are computed with `TreeExplainer` on the XGBoost model. One-hot encoded columns are summed back into their original feature, producing one attribution per raw feature. The application also converts the additive log-odds path into a probability path so the explanation uses the same scale as the headline prediction.
 
 ## Results
 
-Model comparison, 5-fold CV on the **training split**:
+### Model comparison
+
+Five-fold cross-validation on the training split:
 
 | Model | CV ROC-AUC |
-|---|---|
+|---|---:|
 | Logistic Regression | 0.8591 ± 0.0154 |
 | Random Forest | 0.8629 ± 0.0153 |
-| **XGBoost** | 0.8572 ± 0.0168 |
+| XGBoost | 0.8572 ± 0.0168 |
 
-All three land within one standard error of each other, so the differences are noise. The **one-standard-error rule** applies: the winner is decided on the app's requirements (fast exact TreeSHAP, small artifact) rather than on a 0.006 difference the data cannot support.
+All three models fall within one standard error of the best score. XGBoost is selected for the explanation and deployment requirements described above.
 
-Final model, scored **once** on the held-out test split (1,405 rows, 26.5% churn):
+### Held-out test performance
+
+The test split contains 1,405 rows and a 26.5% churn rate. It is scored once after all model, calibration, and threshold decisions are complete.
 
 | Metric | Value |
-|---|---|
+|---|---:|
 | ROC-AUC | 0.848 |
 | PR-AUC | 0.656 |
 | Precision | 0.511 |
 | Recall | 0.774 |
 | F1 | 0.615 |
+| Accuracy | 0.744 |
 | Brier score | 0.136 |
+| Log loss | 0.408 |
 
-At the 29% operating point: **288 churners caught, 84 missed**, 276 loyal customers contacted unnecessarily.
+At the 29.4% operating threshold:
 
-The project optimises for **recall** (~77%): for retention, missing a churner usually costs more than contacting a loyal customer. The trade-off is lower precision (~51%).
+- 288 churners are identified;
+- 84 churners are missed;
+- 276 non-churners are flagged for outreach.
+
+The model is optimised for recall because missing a churner is usually more expensive than contacting a customer who would have stayed. The trade-off is a precision of approximately 51%.
 
 ### Calibration
 
-Class weighting means the raw model output cannot be read as a probability - it predicted an average risk of 38.6% against a true churn rate of 26.5%. Fitting a **sigmoid (Platt) calibrator** on out-of-fold predictions (chosen over isotonic by cross-validated log loss, 0.401 vs 0.421) closes the gap:
+The raw model output overstates churn risk because of class weighting. The sigmoid calibrator closes most of the gap:
 
 | | Mean predicted | Actual base rate | Gap |
-|---|---|---|---|
-| Raw model output | 0.386 | 0.265 | **+0.121** |
-| Calibrated | 0.266 | 0.265 | **+0.001** |
+|---|---:|---:|---:|
+| Raw model output | 0.383 | 0.264 | +0.119 |
+| Calibrated | 0.268 | 0.264 | +0.003 |
 
-The app shows the calibrated probability, so "40%" means a genuine 40% chance of churning.
+The sigmoid calibrator was selected over isotonic by cross-validated log loss (0.401 vs 0.421).
 
-## Key insights
+## Exploratory findings
 
-- **Contract type:** month-to-month customers churn at 42.7%, versus 2.8% for two-year contracts.
-- **Internet service:** fiber optic customers churn at 41.9%, more than double DSL (19.0%).
-- **Payment method:** electronic check users churn at 45.3%, versus 15–17% for automatic payments.
-- SHAP confirms the same drivers: short tenure, high monthly charges, and no tech support or online security increase risk.
+- Month-to-month customers churn at 42.7%, compared with 2.8% for two-year contracts.
+- Fibre optic customers churn at 41.9%, compared with 19.0% for DSL.
+- Electronic check users churn at 45.3%, compared with 15–17% for automatic payment methods.
+- SHAP attributes the largest effects to contract type, tenure, monthly charges, and the absence of technical support or online security.
 
-![SHAP summary](images/shap_beeswarm.png)
+These are descriptive associations in the sample. They should be validated with controlled experiments before being treated as causal retention levers.
 
-**Suggested actions:** offer discounts for annual contracts, bundle security and support for new fiber customers, and encourage automatic payments.
+## Application
 
-## Limitations
+The Streamlit application provides:
 
-- The dataset is a static sample with no time dimension, so the model can't capture changing behaviour.
-- `Total Charges` is estimated as tenure × monthly charges unless the real value is entered in the app. The estimate shifts the score for roughly 1% of customers by enough to change their risk band.
-- The model is trained on one dataset and is not validated on a second one, so the reported numbers are an optimistic estimate of real-world performance.
-- SHAP attributions are computed on the underlying ranking model; the chart converts them to probability points, but the ordering of the factors depends on the order they are applied.
+- a customer input panel with options and bounds taken from the training data;
+- a calibrated churn probability and a population percentile;
+- a threshold-aware risk band;
+- a probability-scale driver chart;
+- an exact log-odds SHAP attribution;
+- a calibration curve and model performance summary;
+- a limitations section for intended use.
 
-## Run locally
+To regenerate the screenshot after starting the app, run `python scripts/screenshot.py`. The screenshot helper requires Playwright, which is not part of the runtime requirements.
+
+## Reproducing the results
 
 ```bash
-git clone https://github.com/basanta-codexa/churn-predictor.git
-cd churn-predictor
 python -m venv venv
-venv\Scripts\activate        # Mac/Linux: source venv/bin/activate
+venv\Scripts\activate        # macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
 streamlit run app.py
 ```
@@ -104,32 +147,52 @@ To retrain the model and regenerate the artifacts:
 python src/train.py
 ```
 
-To run the test suite (36 tests covering the artifacts, the calibration, the SHAP aggregation, the charts, the theme and the app itself):
+This writes `models/model.joblib`, `models/calibrator.joblib`, `models/metadata.json`, and `data/telco_modeling.csv`.
+
+To run the test suite:
 
 ```bash
 pytest tests
 ```
 
+The tests cover the committed artifacts, calibration behaviour, SHAP aggregation, chart rendering, the theme helpers, and the Streamlit app itself.
+
 ## Project structure
 
-```
-├── app.py                    # Streamlit app
-├── .streamlit/config.toml    # Theme: colours, fonts, dark sidebar
+```text
+.
+├── app.py                     # Streamlit application
+├── .streamlit/config.toml     # Theme configuration
 ├── src/
-│   ├── train.py              # Reproducible training pipeline
-│   ├── predictor.py          # Scoring + SHAP logic (no Streamlit, so it is testable)
-│   ├── charts.py             # Plotly figures
-│   └── theme.py              # CSS and HTML components (aurora hero, KPI cards, risk meter)
-├── notebooks/                # EDA and modelling narrative
-├── models/                   # pipeline, calibrator and metadata
-├── data/                     # raw, cleaned and modelling datasets
-├── images/                   # Plots used in this README
-├── scripts/                  # Notebook builder and screenshot helper
-├── tests/                    # pytest suite
+│   ├── train.py               # Training, selection, calibration, evaluation
+│   ├── predictor.py           # Scoring and SHAP logic (no Streamlit dependency)
+│   ├── charts.py              # Plotly figures
+│   └── theme.py               # CSS and HTML components
+├── tests/                     # pytest suite
+├── notebooks/                 # Exploratory analysis and modelling narrative
+├── scripts/                   # Notebook builder and screenshot helper
+├── models/                    # Model, calibrator, and metadata artifacts
+├── data/                      # Raw, cleaned, and modelling datasets
+├── images/                    # Figures used in the documentation
 ├── pytest.ini
 └── requirements.txt
 ```
 
+## Limitations
+
+- The dataset is a static sample with no time dimension. The model cannot capture changing customer behaviour or seasonal effects.
+- The model has not been validated on an external dataset. The reported test metrics are an optimistic estimate of real-world performance.
+- `Total Charges` is estimated as tenure multiplied by monthly charges unless the actual value is entered in the application. The estimate can shift the score for a small number of customers.
+- SHAP values describe associations learned by the model, not causal effects. Retention actions should be tested experimentally.
+- Subgroup performance by gender, age, and other protected attributes has not been audited.
+- The application is a demonstration, not a production decision system. It has no authentication, audit logging, drift monitoring, or model rollback.
+
 ## Tech stack
 
-Python, pandas, scikit-learn, XGBoost, SHAP, Streamlit, Plotly, pytest
+Python 3.14, pandas, NumPy, scikit-learn, XGBoost, SHAP, Streamlit, Plotly, pytest.
+
+## Data and license
+
+The IBM Telco Customer Churn dataset is a public sample. Refer to its original distribution terms for licensing and attribution.
+
+No license has been specified for the application code in this repository.
