@@ -1,5 +1,7 @@
 # 📉 Customer Churn Predictor
 
+[![CI](https://github.com/basanta-codexa/churn-predictor/actions/workflows/ci.yml/badge.svg)](https://github.com/basanta-codexa/churn-predictor/actions/workflows/ci.yml)
+
 An end-to-end machine learning project that predicts which telecom customers are likely to cancel, and explains *why* using SHAP.
 
 **🔗 Live demo:**  https://sl-churn-predictor.streamlit.app/
@@ -88,7 +90,7 @@ The app shows the calibrated probability, so "40%" means a genuine 40% chance of
 ## Run locally
 
 ```bash
-git clone https://github.com/rkkl1511/churn-predictor.git
+git clone https://github.com/basanta-codexa/churn-predictor.git
 cd churn-predictor
 python -m venv venv
 venv\Scripts\activate        # Mac/Linux: source venv/bin/activate
@@ -102,7 +104,7 @@ To retrain the model and regenerate the artifacts:
 python src/train.py
 ```
 
-To run the test suite (34 tests covering the artifacts, the calibration, the SHAP aggregation, the charts, the theme and the app itself):
+To run the test suite (36 tests covering the artifacts, the calibration, the SHAP aggregation, the charts, the theme and the app itself):
 
 ```bash
 pytest tests
