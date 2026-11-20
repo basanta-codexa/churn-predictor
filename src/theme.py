@@ -378,7 +378,17 @@ def _ordinal(value):
     return f"{number}{suffix}"
 
 
-def hero(eyebrow="", title="Customer Churn Risk", subtitle="", meta=()):
+def hero(eyebrow="", title="Customer Churn Risk", subtitle="", meta=(),
+         *, badge=None, chips=None):
+    """Render the page header.
+
+    ``badge`` and ``chips`` are accepted as aliases for ``eyebrow`` and
+    ``meta`` so callers written against the previous signature keep working.
+    """
+    if badge is not None:
+        eyebrow = badge
+    if chips is not None:
+        meta = chips
     meta_html = ""
     if meta:
         items = "".join(f'<span class="chip">{item}</span>' for item in meta)
