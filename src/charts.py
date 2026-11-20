@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import plotly.graph_objects as go
 
-RED = "#B91C1C"
-BLUE = "#1D4ED8"
-GREY = "#94A3B8"
-TEXT = "#111827"
-GRID = "rgba(17,24,39,0.08)"
+RED = "#F87171"
+BLUE = "#7C8CFF"
+GREY = "#8B90A0"
+TEXT = "#E6E8EE"
+GRID = "rgba(255,255,255,0.07)"
 
 #: Long category values are trimmed so the axis labels stay readable.
 SHORT_VALUES = {
@@ -117,7 +117,7 @@ def plot_drivers(labels, steps, base_p, final_p, name=None, value=None):
         font=dict(family="Segoe UI, Arial, sans-serif", color=TEXT),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E2E5EA",
+        hoverlabel=dict(bgcolor="#14171F", bordercolor="#333A4A",
                         font=dict(size=12, color=TEXT)),
     )
 
@@ -183,7 +183,7 @@ def plot_shap_waterfall(labels, phi, base_value):
         font=dict(family="Segoe UI, Arial, sans-serif", color=TEXT),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E2E5EA",
+        hoverlabel=dict(bgcolor="#14171F", bordercolor="#333A4A",
                         font=dict(size=12, color=TEXT)),
     )
     fig.add_vline(
@@ -208,7 +208,7 @@ def plot_reliability(curve):
         hoverinfo="skip",
     ))
 
-    marker = dict(size=8, color=RED, line=dict(width=1, color="#FFFFFF"))
+    marker = dict(size=8, color=RED, line=dict(width=1, color="#0B0D12"))
     hover = "Predicted %{x:.1%}<br>Observed %{y:.1%}<extra></extra>"
     if counts and len(counts) == len(predicted):
         peak = max(counts) or 1
@@ -245,7 +245,7 @@ def plot_reliability(curve):
         margin=dict(l=8, r=16, t=52, b=52),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
-        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E2E5EA",
+        hoverlabel=dict(bgcolor="#14171F", bordercolor="#333A4A",
                         font=dict(size=12, color=TEXT)),
     )
     return fig
