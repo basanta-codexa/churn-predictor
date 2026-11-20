@@ -190,6 +190,10 @@ The tests cover the committed artifacts, calibration behaviour, SHAP aggregation
 └── requirements.txt
 ```
 
+## Deployment
+
+The application is deployed on Streamlit Community Cloud and rebuilds automatically from `main`. See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the pre-deployment checklist, current limitations, and local verification steps.
+
 ## Limitations
 
 - The dataset is a static sample with no time dimension. The model cannot capture changing customer behaviour or seasonal effects.
