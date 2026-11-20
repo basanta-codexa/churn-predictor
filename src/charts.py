@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import plotly.graph_objects as go
 
-RED = "#DC2626"
-BLUE = "#2563EB"
-GREY = "#64748B"
-TEXT = "#0B1220"
+RED = "#D9534F"
+BLUE = "#356AE6"
+GREY = "#667085"
+TEXT = "#172B4D"
 GRID = "rgba(15,23,42,0.08)"
+LOW_RISK = "#269B78"
+MEDIUM_RISK = "#D99A32"
+HIGH_RISK = "#D9534F"
 
 #: Long category values are trimmed so the axis labels stay readable.
 SHORT_VALUES = {
@@ -246,6 +249,47 @@ def plot_reliability(curve):
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E3E8EF",
+                        font=dict(size=12, color=TEXT)),
+    )
+    return fig
+
+
+def plot_risk_distribution(counts):
+    """Bar chart of customers in each calibrated risk band."""
+    labels = ["Low", "Medium", "High"]
+    values = [int(counts.get(name, 0)) for name in ("low", "medium", "high")]
+    colours = [LOW_RISK, MEDIUM_RISK, HIGH_RISK]
+    total = sum(values) or 1
+    shares = [value / total for value in values]
+
+    fig = go.Figure(go.Bar(
+        x=labels,
+        y=values,
+        marker=dict(color=colours, line=dict(width=0)),
+        text=[f"{value:,}" for value in values],
+        textposition="outside",
+        textfont=dict(size=12, color=TEXT),
+        cliponaxis=False,
+        customdata=shares,
+        hovertemplate=("Risk: %{x}<br>Customers: %{y:,}"
+                       "<br>Share: %{customdata:.1%}<extra></extra>"),
+    ))
+    fig.update_layout(
+        title=dict(text="Customers by risk band",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(tickfont=dict(size=12, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True),
+        yaxis=dict(title=dict(text="Customers", font=dict(size=12, color=TEXT)),
+                   tickfont=dict(size=12, color=TEXT), gridcolor=GRID,
+                   zeroline=False, automargin=True),
+        showlegend=False,
+        bargap=0.45,
+        height=300,
+        margin=dict(l=8, r=16, t=52, b=44),
+        font=dict(family="Inter, IBM Plex Sans, Arial, sans-serif", color=TEXT),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E6EAF0",
                         font=dict(size=12, color=TEXT)),
     )
     return fig
