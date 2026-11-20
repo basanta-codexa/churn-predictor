@@ -5,12 +5,15 @@ import math
 import sys
 from pathlib import Path
 
+import joblib
+import pandas as pd
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from data_loader import load_scored_frame  # noqa: E402
+from data_loader import (CALIBRATOR_PATH, MODEL_PATH, load_scored_frame,  # noqa: E402
+                         score_customers)
 from theme import footer, section_header  # noqa: E402
 from page_shell import setup  # noqa: E402
 
@@ -18,6 +21,11 @@ from page_shell import setup  # noqa: E402
 @st.cache_data(show_spinner="Scoring customers...")
 def get_scored_data():
     return load_scored_frame()
+
+
+@st.cache_resource
+def get_model_artifacts():
+    return joblib.load(MODEL_PATH), joblib.load(CALIBRATOR_PATH)
 
 
 frame, meta = get_scored_data()
@@ -80,6 +88,59 @@ st.caption(
     f"(page {page_number} of {pages}). Probabilities are calibrated model "
     "scores, not certain outcomes."
 )
+
+st.markdown(
+    section_header("Batch prediction",
+                   "Score a CSV with the same pipeline and calibrator"),
+    unsafe_allow_html=True,
+)
+
+uploaded = st.file_uploader("Upload customer CSV", type=["csv"])
+if uploaded is not None:
+    try:
+        uploaded_frame = pd.read_csv(uploaded)
+    except Exception as exc:
+        st.error(f"Could not read the uploaded file: {exc}")
+    else:
+        uploaded_frame.columns = (uploaded_frame.columns.str.strip()
+                                  .str.replace(" ", "_"))
+        required = list(meta["feature_order"])
+        missing = [column for column in required
+                   if column not in uploaded_frame.columns]
+        if missing:
+            st.error(
+                "The uploaded file is missing required columns: "
+                + ", ".join(missing))
+        elif len(uploaded_frame) > 10_000:
+            st.error("Batch prediction is limited to 10,000 rows per file.")
+        else:
+            missing_values = int(uploaded_frame[required].isna().sum().sum())
+            if missing_values:
+                st.warning(
+                    f"{missing_values} missing values were found. Numeric "
+                    "values are imputed with zero; unseen categories are "
+                    "ignored by the encoder.")
+
+            pipe, calibrator = get_model_artifacts()
+            batch_result = score_customers(
+                uploaded_frame[required].copy(), meta, pipe, calibrator)
+            if "CustomerID" in uploaded_frame.columns:
+                batch_result.insert(
+                    0, "CustomerID", uploaded_frame["CustomerID"].values)
+
+            batch_display = batch_result.copy()
+            batch_display["churn_probability"] = batch_display[
+                "churn_probability"].map(lambda value: f"{value:.1%}")
+            st.dataframe(batch_display, hide_index=True, width="stretch")
+            st.caption(
+                f"Scored {len(batch_result):,} uploaded customers with "
+                f"{meta['model']['name']} and {meta['calibration']['method']} "
+                "calibration.")
+
+            csv_data = batch_result.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "Download predictions", data=csv_data,
+                file_name="churn_predictions.csv", mime="text/csv")
 
 st.markdown(
     footer([
