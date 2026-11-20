@@ -170,19 +170,26 @@ The tests cover the committed artifacts, calibration behaviour, SHAP aggregation
 ├── app.py                     # Streamlit router and page registration
 ├── .streamlit/config.toml     # Theme configuration
 ├── pages/                     # Named application pages
-│   ├── 1_Overview.py
-│   ├── 2_Predict_Churn.py     # Working assessment page
-│   └── 3-6_*.py               # Placeholders for later phases
+│   ├── 1_Overview.py          # Business overview and churn analytics
+│   ├── 2_Predict_Churn.py     # Individual customer assessment
+│   ├── 3_Customer_Intelligence.py
+│   ├── 4_Retention_Insights.py
+│   ├── 5_Model_Analytics.py
+│   └── 6_Settings.py
 ├── src/
-│   ├── design.py              # Colour, typography, spacing, and reusable components
+│   ├── design.py              # Colour, typography, spacing, components
 │   ├── page_shell.py          # Shared page setup
 │   ├── theme.py               # CSS and HTML components
+│   ├── data_loader.py         # Real customer data and scoring helpers
+│   ├── explainability.py      # Aggregated SHAP summaries
 │   ├── train.py               # Training, selection, calibration, evaluation
 │   ├── predictor.py           # Scoring and SHAP logic (no Streamlit dependency)
 │   └── charts.py              # Plotly figures
 ├── tests/                     # pytest suite
+├── docs/                      # Deployment documentation
 ├── notebooks/                  # Exploratory analysis and modelling narrative
 ├── scripts/                    # Notebook builder and screenshot helper
+├── improvement.md             # UI transformation blueprint
 ├── models/                     # Model, calibrator, and metadata artifacts
 ├── data/                       # Raw, cleaned, and modelling datasets
 ├── images/                     # Figures used in the documentation
