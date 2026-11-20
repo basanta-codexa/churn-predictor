@@ -254,6 +254,45 @@ def plot_reliability(curve):
     return fig
 
 
+def plot_global_drivers(summary):
+    """Diverging bar chart of average SHAP impact per raw feature."""
+    ordered = summary.sort_values("absolute", ascending=True)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        y=ordered["feature"],
+        x=ordered["positive"],
+        orientation="h",
+        name="Increases risk",
+        marker=dict(color=HIGH_RISK, line=dict(width=0)),
+        hovertemplate="%{y}<br>+%{x:.3f} log-odds<extra>Increases risk</extra>",
+    ))
+    fig.add_trace(go.Bar(
+        y=ordered["feature"],
+        x=ordered["negative"],
+        orientation="h",
+        name="Reduces risk",
+        marker=dict(color=BLUE, line=dict(width=0)),
+        hovertemplate="%{y}<br>%{x:.3f} log-odds<extra>Reduces risk</extra>",
+    ))
+    layout = _base_layout(420)
+    layout.update(
+        title=dict(text="Average SHAP impact by feature",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(title=dict(text="Mean SHAP value (log-odds)",
+                              font=dict(size=12, color=TEXT)),
+                   tickfont=dict(size=12, color=TEXT), gridcolor=GRID,
+                   zeroline=True, zerolinecolor=GREY, automargin=True),
+        yaxis=dict(tickfont=dict(size=11, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True),
+        legend=dict(font=dict(size=11, color=TEXT), orientation="h",
+                    y=1.12, x=0),
+        barmode="relative",
+        bargap=0.3,
+    )
+    fig.update_layout(layout)
+    return fig
+
+
 def plot_risk_distribution(counts):
     """Bar chart of customers in each calibrated risk band."""
     labels = ["Low", "Medium", "High"]
