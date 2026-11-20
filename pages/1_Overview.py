@@ -121,6 +121,28 @@ st.caption(
 )
 
 st.markdown(
+    section_header("Customer risk overview",
+                   "Highest-risk customers by calibrated probability"),
+    unsafe_allow_html=True,
+)
+
+top_customers = (frame
+                 .nlargest(10, "churn_probability")
+                 [["CustomerID", "churn_probability", "risk_band_label",
+                   "Tenure_Months", "Contract", "Monthly_Charges"]]
+                 .copy())
+top_customers["churn_probability"] = top_customers[
+    "churn_probability"].map(lambda value: f"{value:.1%}")
+top_customers["Monthly_Charges"] = top_customers[
+    "Monthly_Charges"].map(lambda value: f"${value:,.2f}")
+st.dataframe(top_customers, hide_index=True, width="stretch")
+st.caption(
+    "Customer IDs are taken from the committed raw dataset. The table shows "
+    "the ten highest calibrated probabilities. Open Predict Churn from the "
+    "sidebar for a detailed customer assessment."
+)
+
+st.markdown(
     panel(
         "Model performance overview",
         f"<p>Test ROC-AUC <strong>{m['roc_auc']:.3f}</strong>, PR-AUC "
