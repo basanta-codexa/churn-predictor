@@ -267,7 +267,7 @@ def driver_path(feature_phi, base_value, transform=None, top_n=10):
 
     The features are ordered by absolute impact and applied one after the
     other; the probability is recomputed after every step, so the resulting
-    bar sizes telescope exactly from the population baseline to the final
+    bar sizes telescope exactly from the model baseline to the final
     probability of this customer. Features below ``top_n`` are folded into a
     single "other factors" bar so that the path always ends on the exact
     score the app shows.
