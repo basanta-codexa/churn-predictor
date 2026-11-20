@@ -349,7 +349,8 @@ def _churn_probability(app):
 
 def test_app_runs_without_errors(root):
     from streamlit.testing.v1 import AppTest
-    app = AppTest.from_file(str(root / "app.py"), default_timeout=180)
+    app = AppTest.from_file(
+        str(root / "pages" / "2_Predict_Churn.py"), default_timeout=180)
     app.run()
     assert not app.exception, f"app raised: {[e.value for e in app.exception]}"
     html = _app_html(app)
@@ -362,7 +363,8 @@ def test_app_runs_without_errors(root):
 
 def test_app_responds_to_a_new_customer(root):
     from streamlit.testing.v1 import AppTest
-    app = AppTest.from_file(str(root / "app.py"), default_timeout=180)
+    app = AppTest.from_file(
+        str(root / "pages" / "2_Predict_Churn.py"), default_timeout=180)
     app.run()
     before = _churn_probability(app)
 
@@ -379,7 +381,8 @@ def test_theme_styling_is_applied(root):
     from streamlit.testing.v1 import AppTest
     from theme import CSS, hero, kpi_row, risk_card
 
-    app = AppTest.from_file(str(root / "app.py"), default_timeout=180)
+    app = AppTest.from_file(
+        str(root / "pages" / "2_Predict_Churn.py"), default_timeout=180)
     app.run()
     assert not app.exception
     assert "hero-title" in _app_html(app)
