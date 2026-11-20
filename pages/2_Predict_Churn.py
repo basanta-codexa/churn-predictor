@@ -103,24 +103,49 @@ st.caption(
 # --------------------------------------------------------------------------- #
 st.sidebar.header("Customer inputs")
 st.sidebar.caption(
-    "Options and numeric bounds are taken from the training data."
+    "Options and numeric bounds are taken from the training data. The "
+    "assessment updates as inputs change."
 )
 
-st.sidebar.subheader("Account")
 tenure_range = rng["Tenure_Months"]
 monthly_range = rng["Monthly_Charges"]
 total_range = rng["Total_Charges"]
 
+st.sidebar.subheader("A. Customer profile")
 tenure = st.sidebar.slider(
     "Tenure (months)", int(tenure_range["min"]), int(tenure_range["max"]),
     int(tenure_range["median"]))
+gender = st.sidebar.selectbox("Gender", opts["Gender"])
+senior = st.sidebar.selectbox("Senior citizen", opts["Senior_Citizen"])
+partner = st.sidebar.selectbox("Partner", opts["Partner"])
+dependents = st.sidebar.selectbox("Dependents", opts["Dependents"])
+
+st.sidebar.subheader("B. Subscription information")
+contract = st.sidebar.selectbox("Contract", opts["Contract"])
+phone = st.sidebar.selectbox("Phone service", opts["Phone_Service"])
+if phone == "No":
+    multiple_lines = "No phone service"
+else:
+    line_options = [value for value in opts["Multiple_Lines"]
+                    if value != "No phone service"] or ["No", "Yes"]
+    multiple_lines = st.sidebar.selectbox("Multiple lines", line_options)
+
+internet = st.sidebar.selectbox("Internet service", opts["Internet_Service"])
+addons = {}
+for col in ADDON_COLS:
+    if internet == "No":
+        addons[col] = "No internet service"
+    else:
+        addon_options = [value for value in opts[col]
+                         if value != "No internet service"] or ["No", "Yes"]
+        addons[col] = st.sidebar.selectbox(
+            col.replace("_", " "), addon_options)
+
+st.sidebar.subheader("C. Billing information")
+payment = st.sidebar.selectbox("Payment method", opts["Payment_Method"])
 monthly = st.sidebar.slider(
     "Monthly charges ($)", float(monthly_range["min"]),
     float(monthly_range["max"]), float(monthly_range["median"]), step=0.5)
-contract = st.sidebar.selectbox("Contract", opts["Contract"])
-paperless = st.sidebar.selectbox(
-    "Paperless billing", opts["Paperless_Billing"])
-payment = st.sidebar.selectbox("Payment method", opts["Payment_Method"])
 
 estimate = tenure * monthly
 use_estimate = st.sidebar.checkbox(
@@ -140,31 +165,10 @@ else:
         "Total charges ($)", min_value=0.0,
         max_value=float(total_range["max"]), value=float(estimate), step=10.0)
 
-st.sidebar.subheader("Demographics")
-gender = st.sidebar.selectbox("Gender", opts["Gender"])
-senior = st.sidebar.selectbox("Senior citizen", opts["Senior_Citizen"])
-partner = st.sidebar.selectbox("Partner", opts["Partner"])
-dependents = st.sidebar.selectbox("Dependents", opts["Dependents"])
+paperless = st.sidebar.selectbox(
+    "Paperless billing", opts["Paperless_Billing"])
 
-st.sidebar.subheader("Services")
-phone = st.sidebar.selectbox("Phone service", opts["Phone_Service"])
-if phone == "No":
-    multiple_lines = "No phone service"
-else:
-    line_options = [value for value in opts["Multiple_Lines"]
-                    if value != "No phone service"] or ["No", "Yes"]
-    multiple_lines = st.sidebar.selectbox("Multiple lines", line_options)
-
-internet = st.sidebar.selectbox("Internet service", opts["Internet_Service"])
-addons = {}
-for col in ADDON_COLS:
-    if internet == "No":
-        addons[col] = "No internet service"
-    else:
-        addon_options = [value for value in opts[col]
-                         if value != "No internet service"] or ["No", "Yes"]
-        addons[col] = st.sidebar.selectbox(
-            col.replace("_", " "), addon_options)
+st.sidebar.button("Predict Churn", type="primary")
 
 # --------------------------------------------------------------------------- #
 # predict
