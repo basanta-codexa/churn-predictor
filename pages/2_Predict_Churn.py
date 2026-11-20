@@ -21,7 +21,7 @@ from predictor import (ADDON_COLS, apply_calibrator, build_row,  # noqa: E402
                        score_customer)
 from charts import (SHORT_VALUES, plot_drivers, plot_reliability,  # noqa: E402
                     plot_shap_waterfall)
-from theme import (footer, kpi_row, note_card,  # noqa: E402
+from theme import (footer, kpi_row, note_card, panel,  # noqa: E402
                    percentile_card, risk_card, section_header)
 from page_shell import setup  # noqa: E402
 
@@ -185,6 +185,8 @@ result = score_customer(pipe, calibrator["estimator"], meta, row)
 probability = result["churn_probability"]
 percentile = result["percentile"]
 band = result["band"]
+model_prediction = ("Will churn" if probability >= threshold
+                    else "Will stay")
 
 explanation = explain(explainer, pipe, meta, result["X_new"])
 short_names, values = feature_name_and_value(explanation["names"], row)
@@ -223,14 +225,41 @@ with head3:
     st.markdown(
         note_card(
             "Interpretation",
-            "The displayed probability is calibrated on out-of-fold training "
-            "predictions. A score of 30% means that roughly 30 in 100 "
-            "comparable customers churned.",
-            note=f"Threshold {threshold:.0%} · {cm['tp']} churners identified, "
-                 f"{cm['fn']} missed, {cm['fp']} non-churners flagged.",
+            "This probability is a model estimate, not a guaranteed outcome. "
+            f"Model prediction: <strong>{model_prediction}</strong> at the "
+            f"{threshold:.0%} operating threshold. A score of 30% means that "
+            "roughly 30 in 100 comparable customers churned.",
+            note=f"Calibrated on out-of-fold training predictions · "
+                 f"{cm['tp']} churners identified, {cm['fn']} missed, "
+                 f"{cm['fp']} non-churners flagged.",
         ),
         unsafe_allow_html=True,
     )
+
+
+def _display_value(name, value):
+    if name in ("Monthly_Charges", "Total_Charges"):
+        return f"${value:,.2f}"
+    if name == "Tenure_Months":
+        return f"{value:g} months"
+    return str(value)
+
+
+attribute_names = ["Tenure_Months", "Contract", "Internet_Service",
+                   "Payment_Method", "Monthly_Charges", "Total_Charges"]
+attribute_html = "".join(
+    f"<li><strong>{name.replace('_', ' ')}</strong>: "
+    f"{_display_value(name, row[name])}</li>"
+    for name in attribute_names)
+st.markdown(
+    panel(
+        "Customer attributes used",
+        f'<ul class="planned-list">{attribute_html}</ul>',
+        caption="Exact values passed to the model for this assessment.",
+        phase="This prediction",
+    ),
+    unsafe_allow_html=True,
+)
 
 with st.expander("Model performance (held-out test set)"):
     st.markdown(
