@@ -1,39 +1,34 @@
 [theme]
-base = "dark"
-primaryColor = "#A78BFA"
-backgroundColor = "#08080F"
-secondaryBackgroundColor = "#14141F"
-textColor = "#E8EAF2"
-linkColor = "#38BDF8"
-borderColor = "#26263A"
+base = "light"
+primaryColor = "#1D4ED8"
+backgroundColor = "#F6F7F9"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#111827"
+linkColor = "#1D4ED8"
+borderColor = "#E2E5EA"
+font = "sans serif"
 
-# slightly smaller text than the Streamlit default of 16px
-baseFontSize = 14
+baseFontSize = 15
 baseFontWeight = 400
 baseRadius = "10px"
 buttonRadius = "8px"
 
-headingFontSizes = ["2.1rem", "1.18rem", "1.12rem", "0.98rem", "0.9rem", "0.84rem"]
-headingFontWeights = [800, 700, 700, 700, 600, 600]
+headingFontSizes = ["1.75rem", "1.25rem", "1.1rem", "1rem", "0.9rem", "0.85rem"]
+headingFontWeights = [700, 650, 600, 600, 600, 600]
 
-metricValueFontSize = "1.9rem"
+metricValueFontSize = "1.75rem"
 metricValueFontWeight = 700
 
 showWidgetBorder = true
-showSidebarBorder = false
-paddingTop = "1.1rem"
-paddingBottom = "2rem"
+showSidebarBorder = true
 
-chartCategoricalColors = ["#A78BFA", "#38BDF8", "#F472B6", "#FBBF24", "#34D399", "#FB7185"]
+chartCategoricalColors = ["#1D4ED8", "#0F766E", "#B45309", "#B91C1C", "#6D28D9", "#475569"]
 
 [theme.sidebar]
-backgroundColor = "#06060D"
-secondaryBackgroundColor = "#12121E"
-textColor = "#8A90A8"
-primaryColor = "#A78BFA"
-borderColor = "#1E1E2E"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F6F7F9"
+textColor = "#374151"
+primaryColor = "#1D4ED8"
+borderColor = "#E2E5EA"
 baseRadius = "8px"
-showWidgetBorder = false
-headingFontSizes = ["0.95rem", "0.8rem", "0.76rem", "0.72rem", "0.68rem", "0.64rem"]
-headingFontWeights = [700, 700, 700, 600, 600, 600]
-paddingTop = "1rem"
+showWidgetBorder = true
