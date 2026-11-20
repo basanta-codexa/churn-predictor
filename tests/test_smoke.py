@@ -385,7 +385,7 @@ def test_theme_styling_is_applied(root):
     assert "hero-title" in _app_html(app)
 
     # the shared helpers produce the expected markup
-    assert "gradient" in CSS
+    assert "--accent" in CSS and "font-family" in CSS
     assert "hero-title" in hero()
     assert "kpi-value" in kpi_row([("1", "a", "")])
     assert "meter-fill" in risk_card(0.5, "Low risk", "green", 50, 0.3, 0.3)
