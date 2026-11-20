@@ -293,3 +293,141 @@ def plot_risk_distribution(counts):
                         font=dict(size=12, color=TEXT)),
     )
     return fig
+
+
+def _base_layout(height):
+    return dict(
+        height=height,
+        margin=dict(l=8, r=16, t=52, b=52),
+        font=dict(family="Inter, IBM Plex Sans, Arial, sans-serif", color=TEXT),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#E6EAF0",
+                        font=dict(size=12, color=TEXT)),
+    )
+
+
+def plot_churn_outcome(counts):
+    """Churned versus retained customer counts."""
+    values = [int(counts.get(0, 0)), int(counts.get(1, 0))]
+    fig = go.Figure(go.Bar(
+        x=["Retained", "Churned"],
+        y=values,
+        marker=dict(color=[GREY, RED], line=dict(width=0)),
+        text=[f"{value:,}" for value in values],
+        textposition="outside",
+        textfont=dict(size=12, color=TEXT),
+        cliponaxis=False,
+        hovertemplate="%{x}<br>Customers: %{y:,}<extra></extra>",
+    ))
+    layout = _base_layout(280)
+    layout.update(
+        title=dict(text="Churned vs retained customers",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(tickfont=dict(size=12, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True),
+        yaxis=dict(title=dict(text="Customers", font=dict(size=12, color=TEXT)),
+                   tickfont=dict(size=12, color=TEXT), gridcolor=GRID,
+                   zeroline=False, automargin=True),
+        showlegend=False,
+        bargap=0.5,
+    )
+    fig.update_layout(layout)
+    return fig
+
+
+def plot_category_churn(summary, title):
+    """Churn rate by category.
+
+    ``summary`` is a DataFrame with ``category``, ``churn_rate`` and ``count``
+    columns, computed from the actual dataset by the calling page.
+    """
+    fig = go.Figure(go.Bar(
+        x=summary["category"],
+        y=summary["churn_rate"],
+        marker=dict(color=BLUE, line=dict(width=0)),
+        text=[f"{value:.1%}" for value in summary["churn_rate"]],
+        textposition="outside",
+        textfont=dict(size=11, color=TEXT),
+        cliponaxis=False,
+        customdata=summary["count"],
+        hovertemplate=("%{x}<br>Churn rate: %{y:.1%}"
+                       "<br>Customers: %{customdata:,}<extra></extra>"),
+    ))
+    layout = _base_layout(300)
+    layout.update(
+        title=dict(text=title, font=dict(size=14, color=TEXT),
+                   x=0, xanchor="left"),
+        xaxis=dict(tickfont=dict(size=11, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True),
+        yaxis=dict(title=dict(text="Churn rate", font=dict(size=12, color=TEXT)),
+                   tickformat=".0%", tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False, automargin=True),
+        showlegend=False,
+        bargap=0.4,
+    )
+    fig.update_layout(layout)
+    return fig
+
+
+def plot_tenure_churn(summary):
+    """Churn rate by tenure band."""
+    fig = go.Figure(go.Bar(
+        x=summary["tenure_group"],
+        y=summary["churn_rate"],
+        marker=dict(color=MEDIUM_RISK, line=dict(width=0)),
+        text=[f"{value:.1%}" for value in summary["churn_rate"]],
+        textposition="outside",
+        textfont=dict(size=11, color=TEXT),
+        cliponaxis=False,
+        customdata=summary["count"],
+        hovertemplate=("%{x}<br>Churn rate: %{y:.1%}"
+                       "<br>Customers: %{customdata:,}<extra></extra>"),
+    ))
+    layout = _base_layout(300)
+    layout.update(
+        title=dict(text="Churn rate by tenure",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(tickfont=dict(size=11, color=TEXT), showgrid=False,
+                   zeroline=False, automargin=True),
+        yaxis=dict(title=dict(text="Churn rate", font=dict(size=12, color=TEXT)),
+                   tickformat=".0%", tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False, automargin=True),
+        showlegend=False,
+        bargap=0.4,
+    )
+    fig.update_layout(layout)
+    return fig
+
+
+def plot_probability_distribution(probabilities, threshold):
+    """Histogram of calibrated churn probability with the operating threshold."""
+    fig = go.Figure(go.Histogram(
+        x=probabilities,
+        nbinsx=30,
+        marker=dict(color=BLUE, line=dict(width=0)),
+        opacity=0.9,
+        hovertemplate="Probability: %{x:.1%}<br>Customers: %{y:,}<extra></extra>",
+    ))
+    layout = _base_layout(320)
+    layout.update(
+        title=dict(text="Calibrated churn probability",
+                   font=dict(size=14, color=TEXT), x=0, xanchor="left"),
+        xaxis=dict(title=dict(text="Churn probability",
+                              font=dict(size=12, color=TEXT)),
+                   tickformat=".0%", tickfont=dict(size=12, color=TEXT),
+                   gridcolor=GRID, zeroline=False, automargin=True),
+        yaxis=dict(title=dict(text="Customers", font=dict(size=12, color=TEXT)),
+                   tickfont=dict(size=12, color=TEXT), gridcolor=GRID,
+                   zeroline=False, automargin=True),
+        showlegend=False,
+        bargap=0.05,
+    )
+    fig.update_layout(layout)
+    fig.add_vline(
+        x=threshold, line=dict(color=RED, width=1.5, dash="dash"),
+        annotation_text=f"threshold {threshold:.0%}",
+        annotation_position="top right",
+        annotation_font=dict(size=11, color=RED),
+    )
+    return fig
